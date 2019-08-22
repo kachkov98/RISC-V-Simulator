@@ -15,6 +15,7 @@
 #define GET_PC() (state->GetPC())
 #define SET_PC(x) (state->SetPC(x))
 #define RD(x) (state->SetReg(cur_inst->GetRd(), (x)))
+#define OFFSET ((cur_inst - fst_inst) * 4)
 #define NEXT_INST()                                   \
     {                                                 \
         if (options::verbose)                         \
@@ -45,7 +46,7 @@ void ExecECALL([[maybe_unused]] const ir::Inst *fst_inst,
 void ExecFENCE(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
 {
     state->Flush();
-    SET_PC(GET_PC() + (cur_inst - fst_inst + 1) * 4);
+    SET_PC(GET_PC() + OFFSET + 4);
     END_TRACE();
 }
 
@@ -117,13 +118,13 @@ void ExecLUI(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *sta
 
 void ExecAUIPC(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
 {
-    RD(GET_PC() + (cur_inst - fst_inst) * 4 + UIMM);
+    RD(GET_PC() + OFFSET + UIMM);
     NEXT_INST();
 }
 
 void ExecJAL(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
 {
-    uint32_t cur_pc = GET_PC() + (cur_inst - fst_inst) * 4;
+    uint32_t cur_pc = GET_PC() + OFFSET;
     RD(cur_pc + 4);
     SET_PC(cur_pc + IMM * 2);
     END_TRACE();
@@ -131,7 +132,7 @@ void ExecJAL(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *sta
 
 void ExecJALR(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
 {
-    uint32_t cur_pc = GET_PC() + (cur_inst - fst_inst) * 4;
+    uint32_t cur_pc = GET_PC() + OFFSET;
     RD(cur_pc + 4);
     uint32_t offset = RS1 + IMM;
     SET_PC(offset & ~1u);
@@ -140,42 +141,42 @@ void ExecJALR(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *st
 
 void ExecBEQ(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
 {
-    uint32_t cur_pc = GET_PC() + (cur_inst - fst_inst) * 4;
+    uint32_t cur_pc = GET_PC() + OFFSET;
     SET_PC(RS1 == RS2 ? cur_pc + IMM * 2 : cur_pc + 4);
     END_TRACE();
 }
 
 void ExecBNE(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
 {
-    uint32_t cur_pc = GET_PC() + (cur_inst - fst_inst) * 4;
+    uint32_t cur_pc = GET_PC() + OFFSET;
     SET_PC(RS1 != RS2 ? cur_pc + IMM * 2 : cur_pc + 4);
     END_TRACE();
 }
 
 void ExecBLT(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
 {
-    uint32_t cur_pc = GET_PC() + (cur_inst - fst_inst) * 4;
+    uint32_t cur_pc = GET_PC() + OFFSET;
     SET_PC(RS1 < RS2 ? cur_pc + IMM * 2 : cur_pc + 4);
     END_TRACE();
 }
 
 void ExecBGE(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
 {
-    uint32_t cur_pc = GET_PC() + (cur_inst - fst_inst) * 4;
+    uint32_t cur_pc = GET_PC() + OFFSET;
     SET_PC(RS1 >= RS2 ? cur_pc + IMM * 2 : cur_pc + 4);
     END_TRACE();
 }
 
 void ExecBLTU(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
 {
-    uint32_t cur_pc = GET_PC() + (cur_inst - fst_inst) * 4;
+    uint32_t cur_pc = GET_PC() + OFFSET;
     SET_PC(URS1 < URS2 ? cur_pc + IMM * 2 : cur_pc + 4);
     END_TRACE();
 }
 
 void ExecBGEU(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
 {
-    uint32_t cur_pc = GET_PC() + (cur_inst - fst_inst) * 4;
+    uint32_t cur_pc = GET_PC() + OFFSET;
     SET_PC(URS1 >= URS2 ? cur_pc + IMM * 2 : cur_pc + 4);
     END_TRACE();
 }

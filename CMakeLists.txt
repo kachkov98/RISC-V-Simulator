@@ -7,6 +7,8 @@ find_library(M_LIB m)
 
 include_directories(asmjit/src)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(SIM_DIR sim)
 set(SIM_SRC
     ${SIM_DIR}/decoder.cpp
