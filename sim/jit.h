@@ -1,7 +1,7 @@
 #ifndef JIT_H
 #define JIT_H
-#include "ir.h"
 #include "asmjit/asmjit.h"
+#include "ir.h"
 #include <memory>
 #include <vector>
 
@@ -11,31 +11,62 @@ namespace jit
 typedef void(ExecTrace)(sim::State *);
 typedef void (*ExecTracePtr)(sim::State *);
 
+class Runtime
+{
+public:
+    static asmjit::JitRuntime &Get()
+    {
+        static asmjit::JitRuntime runtime;
+        return runtime;
+    }
+
+private:
+    Runtime(){};
+    Runtime(const Runtime &);
+    Runtime &operator=(const Runtime &);
+};
+
 struct ExecTraceDeleter
 {
-    void operator()(ExecTracePtr);
+    void operator()(ExecTracePtr trace)
+    {
+        if (trace)
+            Runtime::Get().release(trace);
+    }
 };
 
 class Translator
 {
 public:
-    Translator(asmjit::CodeHolder *code)
-        : x86asm_(code)
+    Translator(const std::vector<ir::Inst> &trace);
+    ExecTracePtr GetFunc() const
     {
+        return func_;
     }
-    // TBD: current intention is to use some form of register allocator for trace translation.
-    // So, we should process liveness analysis (in TranslateTrace?),and pass this information
-    // to the Translator class. It should contain current risc-v reg -> x86 reg mapping, and
-    // provide interface for accessing operands (they can be in x86 register or in state memory).
-#if 0
-    asmjit::Operand GetOperand(ir::Reg) const;
-    asmjit::Operand GetOperand(ir::Imm) const;
-#endif
-private:
-    asmjit::X86Assembler x86asm_;
-};
+    asmjit::x86::Assembler &GetAsm() const
+    {
+        return x86asm_;
+    }
+    asmjit::Operand GetReg(ir::Reg reg) const;
+    asmjit::Operand GetTmp() const
+    {
+        return asmjit::x86::esi;
+    }
+    asmjit::Operand GetPc() const;
+    size_t GetOffset() const
+    {
+        return cur_inst_ * 4;
+    }
 
-ExecTracePtr TranslateTrace(const std::vector<ir::Inst> &trace);
-}   // namespace Jit
+private:
+    ExecTracePtr func_ = nullptr;
+    size_t cur_inst_;
+
+    mutable asmjit::CodeHolder code_;
+    mutable asmjit::x86::Assembler x86asm_;
+    mutable asmjit::FileLogger logger_;
+    // free regs - edx, ecx, r8d, r9d, r10d, r11d
+};
+}   // namespace jit
 
 #endif

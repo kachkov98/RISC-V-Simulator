@@ -122,9 +122,13 @@ public:
     {
         func_(fst_inst, this, state);
     }
-    bool Translate(jit::Translator &tr) const
+    bool IsTranslationSupported() const
     {
-        return isa::GetCmdDesc(cmd_).translate_func(tr, this);
+        return isa::GetCmdDesc(cmd_).translate_func != nullptr;
+    }
+    void Translate(const jit::Translator &tr) const
+    {
+        isa::GetCmdDesc(cmd_).translate_func(tr, this);
     }
 };
 

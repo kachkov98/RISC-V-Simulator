@@ -41,7 +41,7 @@ void Trace::Execute(State *state) const
     if (options::jit && is_eligible_ && !exec_trace_ && options::jit_threshold == exec_num_++)
     {
         log("Attempt to translate trace...\n");
-        exec_trace_ = ExecTraceType(jit::TranslateTrace(trace_));
+        exec_trace_ = ExecTraceType(jit::Translator(trace_).GetFunc());
         if (!exec_trace_)
         {
             is_eligible_ = false;
@@ -55,6 +55,9 @@ void Trace::Execute(State *state) const
         (*exec_trace_)(state);
     else
         trace_.data()->Exec(trace_.data(), state);
+    state->AddExecutedInsts(trace_.size());
+    if (options::verbose)
+        state->Dump(options::log);
 }
 
 void Trace::Dump(FILE *f) const

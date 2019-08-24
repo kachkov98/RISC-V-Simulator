@@ -71,7 +71,7 @@ public:
 
 class State
 {
-private:
+public:
     std::array<uint32_t, 32> regs_;
     uint32_t pc_;
     uint64_t executed_insts_;

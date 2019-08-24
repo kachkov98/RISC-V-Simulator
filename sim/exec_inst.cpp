@@ -22,11 +22,10 @@
             cur_inst->Dump(options::log);             \
         return (cur_inst + 1)->Exec(fst_inst, state); \
     }
-#define END_TRACE()                                       \
-    {                                                     \
-        if (options::verbose)                             \
-            cur_inst->Dump(options::log);                 \
-        state->AddExecutedInsts(cur_inst - fst_inst + 1); \
+#define END_TRACE()                       \
+    {                                     \
+        if (options::verbose)             \
+            cur_inst->Dump(options::log); \
     }
 
 void ExecDummy(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
