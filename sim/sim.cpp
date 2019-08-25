@@ -1,4 +1,5 @@
 #include "sim.h"
+#include "jit.h"
 
 namespace sim
 {
@@ -64,6 +65,12 @@ void Trace::Dump(FILE *f) const
 {
     for (const auto &inst : trace_)
         inst.Dump(f);
+}
+
+void Trace::ExecTraceDeleter::operator()(ExecTracePtr trace)
+{
+    if (trace)
+        jit::Runtime::Get().release(trace);
 }
 
 // TraceCache

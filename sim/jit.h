@@ -8,9 +8,6 @@
 namespace jit
 {
 
-typedef void(ExecTrace)(sim::State *);
-typedef void (*ExecTracePtr)(sim::State *);
-
 class Runtime
 {
 public:
@@ -24,15 +21,6 @@ private:
     Runtime(){};
     Runtime(const Runtime &);
     Runtime &operator=(const Runtime &);
-};
-
-struct ExecTraceDeleter
-{
-    void operator()(ExecTracePtr trace)
-    {
-        if (trace)
-            Runtime::Get().release(trace);
-    }
 };
 
 class Translator

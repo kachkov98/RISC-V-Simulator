@@ -3,7 +3,6 @@
 
 #include "common.h"
 #include "decoder.h"
-#include "jit.h"
 #include "mmu.h"
 #include <algorithm>
 #include <array>
@@ -15,12 +14,15 @@
 
 namespace sim
 {
-class State;
 
 class Trace
 {
 private:
-    using ExecTraceType = std::unique_ptr<jit::ExecTrace, jit::ExecTraceDeleter>;
+    struct ExecTraceDeleter
+    {
+        void operator()(ExecTracePtr trace);
+    };
+    using ExecTraceType = std::unique_ptr<ExecTrace, ExecTraceDeleter>;
     std::vector<ir::Inst> trace_;
     mutable ExecTraceType exec_trace_;
     mutable uint64_t exec_num_ = 0;

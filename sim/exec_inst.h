@@ -11,8 +11,6 @@ namespace sim
 class State;
 }
 
-typedef void (*ExecFunc)(const ir::Inst *, const ir::Inst *, sim::State *);
-
 void ExecDummy(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state);
 
 void ExecECALL(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state);

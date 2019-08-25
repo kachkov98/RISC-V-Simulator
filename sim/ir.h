@@ -1,7 +1,6 @@
 #ifndef IR_H
 #define IR_H
 
-#include "exec_inst.h"
 #include "isa_desc.h"
 #include <cassert>
 #include <cstdio>

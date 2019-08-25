@@ -1,10 +1,28 @@
 #ifndef ISA_DESC_H
 #define ISA_DESC_H
 
-#include "exec_inst.h"
-#include "translate_inst.h"
 #include <cstdint>
 #include <cstdlib>
+
+namespace ir
+{
+class Inst;
+}
+
+namespace sim
+{
+class State;
+}
+
+namespace jit
+{
+class Translator;
+}
+
+typedef void (*ExecFunc)(const ir::Inst *, const ir::Inst *, sim::State *);
+typedef void (*TranslateFunc)(const jit::Translator &, const ir::Inst *);
+typedef void(ExecTrace)(sim::State *);
+typedef void (*ExecTracePtr)(sim::State *);
 
 namespace isa
 {

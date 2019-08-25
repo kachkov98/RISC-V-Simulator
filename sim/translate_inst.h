@@ -11,8 +11,6 @@ namespace jit
 class Translator;
 }
 
-typedef void (*TranslateFunc)(const jit::Translator &, const ir::Inst *);
-
 void TranslateDummy(const jit::Translator &tr, const ir::Inst *inst);
 
 void TranslateLUI(const jit::Translator &tr, const ir::Inst *inst);

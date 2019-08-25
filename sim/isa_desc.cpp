@@ -1,5 +1,7 @@
 #include "isa_desc.h"
 #include "common.h"
+#include "exec_inst.h"
+#include "translate_inst.h"
 #include <cassert>
 
 namespace isa
