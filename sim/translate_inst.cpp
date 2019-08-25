@@ -1,5 +1,4 @@
 #include "translate_inst.h"
-#include "common.h"
 #include "jit.h"
 
 #define EMIT(...) (tr.GetAsm().emit(__VA_ARGS__))
@@ -151,12 +150,14 @@ void TranslateADDI(const jit::Translator &tr, const ir::Inst *inst)
 void TranslateSLTI(const jit::Translator &tr, const ir::Inst *inst)
 {
     EMIT(x86::Inst::kIdCmp, RS1, Imm(IMM));
+    EMIT(x86::Inst::kIdMov, RD, Imm(0));
     EMIT(x86::Inst::kIdSetl, RD);
 }
 
 void TranslateSLTIU(const jit::Translator &tr, const ir::Inst *inst)
 {
     EMIT(x86::Inst::kIdCmp, RS1, Imm(UIMM));
+    EMIT(x86::Inst::kIdMov, RD, Imm(0));
     EMIT(x86::Inst::kIdSetb, RD);
 }
 
@@ -214,6 +215,7 @@ void TranslateSLT(const jit::Translator &tr, const ir::Inst *inst)
         FST = TMP;
     }
     EMIT(x86::Inst::kIdCmp, FST, RS2);
+    EMIT(x86::Inst::kIdMov, RD, Imm(0));
     EMIT(x86::Inst::kIdSetl, RD);
 }
 
@@ -226,6 +228,7 @@ void TranslateSLTU(const jit::Translator &tr, const ir::Inst *inst)
         FST = TMP;
     }
     EMIT(x86::Inst::kIdCmp, FST, RS2);
+    EMIT(x86::Inst::kIdMov, RD, Imm(0));
     EMIT(x86::Inst::kIdSetb, RD);
 }
 
