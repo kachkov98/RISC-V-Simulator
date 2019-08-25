@@ -16,6 +16,29 @@
 using namespace asmjit;
 
 // Helper functions for common translation templates
+void TranslateLoad(const jit::Translator &tr, const ir::Inst *inst, uint8_t num_bytes)
+{
+    EMIT(x86::Inst::kIdMov, x86::esi, RS1);
+    EMIT(x86::Inst::kIdAdd, x86::esi, Imm(IMM));
+    EMIT(x86::Inst::kIdMov, x86::edx, Imm(num_bytes));
+    EMIT(x86::Inst::kIdPush, x86::rdi);
+    EMIT(x86::Inst::kIdLea, x86::rdi, tr.GetMMU());
+    EMIT(x86::Inst::kIdCall, tr.GetLoadFunc());
+    EMIT(x86::Inst::kIdPop, x86::rdi);
+}
+
+void TranslateStore(const jit::Translator &tr, const ir::Inst *inst, uint8_t num_bytes)
+{
+    EMIT(x86::Inst::kIdMov, x86::esi, RS1);
+    EMIT(x86::Inst::kIdAdd, x86::esi, Imm(IMM));
+    EMIT(x86::Inst::kIdMov, x86::edx, Imm(num_bytes));
+    EMIT(x86::Inst::kIdMov, x86::ecx, RS2);
+    EMIT(x86::Inst::kIdPush, x86::rdi);
+    EMIT(x86::Inst::kIdLea, x86::rdi, tr.GetMMU());
+    EMIT(x86::Inst::kIdCall, tr.GetStoreFunc());
+    EMIT(x86::Inst::kIdPop, x86::rdi);
+}
+
 void TranslateCondBranch(const jit::Translator &tr, const ir::Inst *inst, x86::Inst::Id cmp_inst)
 {
     Label taken = tr.GetAsm().newLabel();
@@ -76,6 +99,59 @@ void TranslateShift(const jit::Translator &tr, const ir::Inst *inst, x86::Inst::
     EMIT(x86::Inst::kIdMov, x86::ecx, TMP);
 }
 // end of helper functions
+
+void TranslateLB(const jit::Translator &tr, const ir::Inst *inst)
+{
+    TranslateLoad(tr, inst, 1);
+    EMIT(x86::Inst::kIdMovsx, TMP, x86::al);
+    EMIT(x86::Inst::kIdMov, RD, TMP);
+}
+
+void TranslateLH(const jit::Translator &tr, const ir::Inst *inst)
+{
+    TranslateLoad(tr, inst, 2);
+    EMIT(x86::Inst::kIdMovsx, TMP, x86::ax);
+    EMIT(x86::Inst::kIdMov, RD, TMP);
+}
+
+void TranslateLW(const jit::Translator &tr, const ir::Inst *inst)
+{
+    TranslateLoad(tr, inst, 4);
+    EMIT(x86::Inst::kIdMov, RD, x86::eax);
+}
+
+void TranslateLBU(const jit::Translator &tr, const ir::Inst *inst)
+{
+    TranslateLoad(tr, inst, 1);
+    EMIT(x86::Inst::kIdMov, RD, x86::eax);
+}
+
+void TranslateLHU(const jit::Translator &tr, const ir::Inst *inst)
+{
+    TranslateLoad(tr, inst, 2);
+    EMIT(x86::Inst::kIdMov, RD, x86::eax);
+}
+
+void TranslateLWU(const jit::Translator &tr, const ir::Inst *inst)
+{
+    TranslateLoad(tr, inst, 4);
+    EMIT(x86::Inst::kIdMov, RD, x86::eax);
+}
+
+void TranslateSB(const jit::Translator &tr, const ir::Inst *inst)
+{
+    TranslateStore(tr, inst, 1);
+}
+
+void TranslateSH(const jit::Translator &tr, const ir::Inst *inst)
+{
+    TranslateStore(tr, inst, 2);
+}
+
+void TranslateSW(const jit::Translator &tr, const ir::Inst *inst)
+{
+    TranslateStore(tr, inst, 4);
+}
 
 void TranslateLUI(const jit::Translator &tr, const ir::Inst *inst)
 {

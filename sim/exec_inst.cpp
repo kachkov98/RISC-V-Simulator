@@ -56,13 +56,6 @@ void ExecLB(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *stat
     NEXT_INST();
 }
 
-void ExecLW(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
-{
-    uint32_t val = state->Read(RS1 + IMM, 4);
-    RD(SIGN_EXTEND(val, 32));
-    NEXT_INST();
-}
-
 void ExecLH(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
 {
     uint32_t val = state->Read(RS1 + IMM, 2);
@@ -70,16 +63,16 @@ void ExecLH(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *stat
     NEXT_INST();
 }
 
-void ExecLBU(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
+void ExecLW(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
 {
-    uint32_t val = state->Read(RS1 + IMM, 1);
-    RD(val);
+    uint32_t val = state->Read(RS1 + IMM, 4);
+    RD(SIGN_EXTEND(val, 32));
     NEXT_INST();
 }
 
-void ExecLWU(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
+void ExecLBU(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
 {
-    uint32_t val = state->Read(RS1 + IMM, 4);
+    uint32_t val = state->Read(RS1 + IMM, 1);
     RD(val);
     NEXT_INST();
 }
@@ -91,21 +84,28 @@ void ExecLHU(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *sta
     NEXT_INST();
 }
 
+void ExecLWU(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
+{
+    uint32_t val = state->Read(RS1 + IMM, 4);
+    RD(val);
+    NEXT_INST();
+}
+
 void ExecSB(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
 {
     state->Write(RS1 + IMM, 1, RS2);
     NEXT_INST();
 }
 
-void ExecSW(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
-{
-    state->Write(RS1 + IMM, 4, RS2);
-    NEXT_INST();
-}
-
 void ExecSH(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
 {
     state->Write(RS1 + IMM, 2, RS2);
+    NEXT_INST();
+}
+
+void ExecSW(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state)
+{
+    state->Write(RS1 + IMM, 4, RS2);
     NEXT_INST();
 }
 

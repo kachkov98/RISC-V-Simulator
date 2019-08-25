@@ -2,6 +2,16 @@
 #include "common.h"
 #include "sim.h"
 
+uint32_t Load(MMU *mmu, uint32_t va, uint8_t nbytes)
+{
+    return mmu->Load(va, nbytes, true);
+}
+
+void Store(MMU *mmu, uint32_t va, uint8_t nbytes, uint32_t data)
+{
+    mmu->Store(va, nbytes, data);
+}
+
 namespace jit
 {
 
@@ -42,6 +52,22 @@ asmjit::Operand Translator::GetReg(ir::Reg reg) const
     }
     else
         return asmjit::Imm(0);
+}
+
+asmjit::Operand Translator::GetMMU() const
+{
+    size_t offset = offsetof(sim::State, mmu_);
+    return asmjit::x86::ptr_64(asmjit::x86::rdi, offset);
+}
+
+asmjit::Operand Translator::GetLoadFunc() const
+{
+    return asmjit::Imm(reinterpret_cast<uint64_t>(&Load));
+}
+
+asmjit::Operand Translator::GetStoreFunc() const
+{
+    return asmjit::Imm(reinterpret_cast<uint64_t>(&Store));
 }
 
 asmjit::Operand Translator::GetPc() const

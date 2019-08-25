@@ -40,6 +40,9 @@ public:
     {
         return asmjit::x86::esi;
     }
+    asmjit::Operand GetMMU() const;
+    asmjit::Operand GetLoadFunc() const;
+    asmjit::Operand GetStoreFunc() const;
     asmjit::Operand GetPc() const;
     size_t GetOffset() const
     {

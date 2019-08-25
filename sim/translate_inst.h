@@ -11,7 +11,14 @@ namespace jit
 class Translator;
 }
 
-void TranslateDummy(const jit::Translator &tr, const ir::Inst *inst);
+void TranslateLB(const jit::Translator &tr, const ir::Inst *inst);
+void TranslateLW(const jit::Translator &tr, const ir::Inst *inst);
+void TranslateLH(const jit::Translator &tr, const ir::Inst *inst);
+void TranslateLBU(const jit::Translator &tr, const ir::Inst *inst);
+void TranslateLHU(const jit::Translator &tr, const ir::Inst *inst);
+void TranslateSB(const jit::Translator &tr, const ir::Inst *inst);
+void TranslateSH(const jit::Translator &tr, const ir::Inst *inst);
+void TranslateSW(const jit::Translator &tr, const ir::Inst *inst);
 
 void TranslateLUI(const jit::Translator &tr, const ir::Inst *inst);
 void TranslateAUIPC(const jit::Translator &tr, const ir::Inst *inst);
