@@ -2,6 +2,7 @@
 #define MMU_H
 
 #include "common.h"
+#include "stats.h"
 #include <memory>
 
 class MMU
@@ -148,6 +149,10 @@ public:
             auto res = instRead ? instTLB_.Insert(va, *this, va, MMU::AccessType::EXEC)
                                 : dataTLB_.Insert(va, *this, va, MMU::AccessType::READ);
             pa = res.first;
+            if (instRead)
+                ++(res.second ? stats::itlb_misses : stats::itlb_hits);
+            else
+                ++(res.second ? stats::dtlb_load_misses : stats::dtlb_load_hits);
         }
         return (*GetMemPtr<uint32_t>(pa)) & (nbytes == 4 ? 0xffffffff : ((1 << (8 * nbytes)) - 1));
     }
@@ -164,6 +169,7 @@ public:
         {
             auto res = dataTLB_.Insert(va, *this, va, MMU::AccessType::WRITE);
             pa = res.first;
+            ++(res.second ? stats::dtlb_store_misses : stats::dtlb_store_hits);
         }
         *GetMemPtr<uint32_t>(pa) = data & (nbytes == 4 ? 0xffffffff : ((1 << (8 * nbytes)) - 1));
     }

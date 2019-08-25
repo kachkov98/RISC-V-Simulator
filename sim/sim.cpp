@@ -1,5 +1,6 @@
 #include "sim.h"
 #include "jit.h"
+#include "stats.h"
 
 namespace sim
 {
@@ -46,17 +47,27 @@ void Trace::Execute(State *state) const
         if (!exec_trace_)
         {
             is_eligible_ = false;
+            ++stats::jit_failed_translations;
             log("Fail\n");
         }
         else
+        {
+            ++stats::jit_finished_translations;
             log("Success\n");
+        }
     }
     log("Executing trace...\n");
     if (exec_trace_)
+    {
         (*exec_trace_)(state);
+        ++stats::translated_executions;
+    }
     else
+    {
         trace_.data()->Exec(trace_.data(), state);
-    state->AddExecutedInsts(trace_.size());
+        ++stats::interpreted_executions;
+    }
+    stats::executed_insts += trace_.size();
     if (options::verbose)
         state->Dump(options::log);
 }
@@ -101,7 +112,7 @@ void Sim::Execute()
         while (true)
         {
             state_.trace_cache.Refer(decoder_, state_, state_.GetPC()).Execute(&state_);
-            if (options::max_insts && state_.GetExecutedInsts() >= options::max_insts)
+            if (options::max_insts && stats::executed_insts >= options::max_insts)
                 break;
         }
     }
@@ -112,11 +123,9 @@ void Sim::Execute()
     timer.Finish();
     state_.Dump(options::log);
     fprintf(options::log, "Some statistics:\n");
-    uint64_t exec_insts = state_.GetExecutedInsts();
     uint64_t time = timer.GetMilliseconds();
-    fprintf(options::log, "Number of instructions executed: %lu, time: %lu ms, MIPS: %.3lf\n",
-            exec_insts, time, (double)exec_insts / (time * 1000));
-    fprintf(options::log, "Trace cache: hits: %lu, misses: %lu\n", state_.trace_cache.GetHits(),
-            state_.trace_cache.GetMisses());
+    fprintf(options::log, "Time: %lu ms, MIPS: %.3lf\n",
+            time, (double)stats::executed_insts / (time * 1000));
+    stats::PrintStatistics(options::log);
 }
 }   // namespace sim

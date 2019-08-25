@@ -38,35 +38,24 @@ class TraceCache
 {
 private:
     LRUCache<uint32_t, Trace> cache_;
-    uint64_t hits_, misses_;
 
 public:
     TraceCache(size_t size)
         : cache_(size)
-        , hits_(0)
-        , misses_(0)
     {
     }
     const Trace &Refer(const Decoder &decoder, State &state, uint32_t addr)
     {
         auto res = cache_.Insert(addr, decoder, state);
         if (res.second)
-            ++misses_;
+            ++stats::trace_cache_misses;
         else
-            ++hits_;
+            ++stats::trace_cache_hits;
         return res.first;
     }
     void Flush()
     {
         cache_.Clear();
-    }
-    uint64_t GetHits() const
-    {
-        return hits_;
-    }
-    uint64_t GetMisses() const
-    {
-        return misses_;
     }
     void Dump(FILE *f) const;
 };
@@ -76,7 +65,6 @@ class State
 public:
     std::array<uint32_t, 32> regs_;
     uint32_t pc_;
-    uint64_t executed_insts_;
     // TODO: system registers
     MMU mmu_;
 
@@ -87,7 +75,6 @@ public:
           const std::vector<uint32_t> &seg_va,
           uint32_t pc)
         : pc_(pc)
-        , executed_insts_(0)
         , mmu_(satp)
         , trace_cache(options::cache_size)
     {
@@ -133,14 +120,6 @@ public:
         pc_ = pc;
     }
 
-    uint64_t GetExecutedInsts()
-    {
-        return executed_insts_;
-    }
-    void AddExecutedInsts(uint32_t num)
-    {
-        executed_insts_ += num;
-    }
     void Dump(FILE *f) const;
 
     uint32_t GetCmd(uint32_t va)
