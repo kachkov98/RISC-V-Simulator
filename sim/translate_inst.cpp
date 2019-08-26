@@ -11,13 +11,14 @@
 #define IMM ((int32_t)inst->GetImm())
 #define PC (tr.GetPc())
 #define OFFSET (tr.GetOffset())
-#define END_TRACE() (tr.GetAsm().emit(asmjit::x86::Inst::kIdRet))
+#define END_TRACE()
 
 using namespace asmjit;
 
 // Helper functions for common translation templates
 void TranslateLoad(const jit::Translator &tr, const ir::Inst *inst, uint8_t num_bytes)
 {
+    tr.SaveAllRegs();
     EMIT(x86::Inst::kIdMov, x86::esi, RS1);
     EMIT(x86::Inst::kIdAdd, x86::esi, Imm(IMM));
     EMIT(x86::Inst::kIdMov, x86::edx, Imm(num_bytes));
@@ -25,10 +26,12 @@ void TranslateLoad(const jit::Translator &tr, const ir::Inst *inst, uint8_t num_
     EMIT(x86::Inst::kIdLea, x86::rdi, tr.GetMMU());
     EMIT(x86::Inst::kIdCall, tr.GetLoadFunc());
     EMIT(x86::Inst::kIdPop, x86::rdi);
+    tr.RestoreAllRegs();
 }
 
 void TranslateStore(const jit::Translator &tr, const ir::Inst *inst, uint8_t num_bytes)
 {
+    tr.SaveAllRegs();
     EMIT(x86::Inst::kIdMov, x86::esi, RS1);
     EMIT(x86::Inst::kIdAdd, x86::esi, Imm(IMM));
     EMIT(x86::Inst::kIdMov, x86::edx, Imm(num_bytes));
@@ -37,6 +40,7 @@ void TranslateStore(const jit::Translator &tr, const ir::Inst *inst, uint8_t num
     EMIT(x86::Inst::kIdLea, x86::rdi, tr.GetMMU());
     EMIT(x86::Inst::kIdCall, tr.GetStoreFunc());
     EMIT(x86::Inst::kIdPop, x86::rdi);
+    tr.RestoreAllRegs();
 }
 
 void TranslateCondBranch(const jit::Translator &tr, const ir::Inst *inst, x86::Inst::Id cmp_inst)
@@ -64,7 +68,8 @@ void TranslateImmType(const jit::Translator &tr, const ir::Inst *inst, x86::Inst
     if (!inst->GetRd())
         return;
     Operand DST = RD.isMem() ? TMP : RD;
-    EMIT(x86::Inst::kIdMov, DST, RS1);
+    if (DST != RS1)
+        EMIT(x86::Inst::kIdMov, DST, RS1);
     if (opcode_inst != x86::Inst::kIdMov)
         EMIT(opcode_inst, DST, Imm(IMM));
     if (RD.isMem())
@@ -75,12 +80,19 @@ void TranslateRegType(const jit::Translator &tr, const ir::Inst *inst, x86::Inst
 {
     if (!inst->GetRd())
         return;
+#if 0
     Operand DST = RD.isMem() ? TMP : RD;
-    EMIT(x86::Inst::kIdMov, DST, RS1);
+    if (DST != RS1)
+        EMIT(x86::Inst::kIdMov, DST, RS1);
     if (opcode_inst != x86::Inst::kIdMov)
         EMIT(opcode_inst, DST, RS2);
     if (RD.isMem())
         EMIT(x86::Inst::kIdMov, RD, TMP);
+#endif
+    EMIT(x86::Inst::kIdMov, TMP, RS1);
+    if (opcode_inst != x86::Inst::kIdMov)
+        EMIT(opcode_inst, TMP, RS2);
+    EMIT(x86::Inst::kIdMov, RD, TMP);
 }
 
 void TranslateShift(const jit::Translator &tr, const ir::Inst *inst, x86::Inst::Id shift_inst)
@@ -88,7 +100,8 @@ void TranslateShift(const jit::Translator &tr, const ir::Inst *inst, x86::Inst::
     if (!inst->GetRd())
         return;
     Operand DST = RD.isMem() ? TMP : RD;
-    EMIT(x86::Inst::kIdMov, DST, RS1);
+    if (DST != RS1)
+        EMIT(x86::Inst::kIdMov, DST, RS1);
     if (RD.isMem())
         EMIT(x86::Inst::kIdMov, RD, TMP);
     if (!inst->GetRs2())

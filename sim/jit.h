@@ -2,7 +2,9 @@
 #define JIT_H
 #include "asmjit/asmjit.h"
 #include "ir.h"
+#include <bitset>
 #include <memory>
+#include <queue>
 #include <vector>
 
 namespace jit
@@ -49,6 +51,9 @@ public:
         return cur_inst_ * 4;
     }
 
+    void SaveAllRegs() const;
+    void RestoreAllRegs() const;
+
 private:
     ExecTracePtr func_ = nullptr;
     size_t cur_inst_;
@@ -56,6 +61,14 @@ private:
     mutable asmjit::CodeHolder code_;
     mutable asmjit::x86::Assembler x86asm_;
     mutable asmjit::FileLogger logger_;
+
+    mutable std::array<asmjit::Operand, 32> reg_mapping_;
+    mutable std::queue<asmjit::x86::Gp> reg_pool_;
+    std::vector<std::bitset<32>> liveness_;
+    void CalcLiveness(const std::vector<ir::Inst> &trace);
+    asmjit::x86::Mem GetRegMemOp(ir::Reg reg) const;
+    void AllocateReg(ir::Reg reg, bool load = false) const;
+    void DeallocateReg(ir::Reg reg, bool sink = false) const;
     // free regs - edx, ecx, r8d, r9d, r10d, r11d
 };
 }   // namespace jit
