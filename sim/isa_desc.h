@@ -4,18 +4,15 @@
 #include <cstdint>
 #include <cstdlib>
 
-namespace ir
-{
+namespace ir {
 class Inst;
 }
 
-namespace sim
-{
+namespace sim {
 class State;
 }
 
-namespace jit
-{
+namespace jit {
 class Translator;
 }
 
@@ -24,8 +21,7 @@ typedef void (*TranslateFunc)(const jit::Translator &, const ir::Inst *);
 typedef void(ExecTrace)(sim::State *);
 typedef void (*ExecTracePtr)(sim::State *);
 
-namespace isa
-{
+namespace isa {
 // clang-format off
 // Command format description
 enum class CmdFormat: uint8_t
@@ -79,148 +75,143 @@ struct UFormat
 // clang-format on
 
 // Opcode description
-enum class Opcode : uint8_t
-{
-    LOAD,
-    STORE,
-    BRANCH,
-    JALR,
-    JAL,
-    OP_IMM,
-    OP,
-    SYSTEM,
-    AUIPC,
-    LUI,
-    MSCMEM,
-    // stub opcode
-    UNDEFINED
+enum class Opcode : uint8_t {
+  LOAD,
+  STORE,
+  BRANCH,
+  JALR,
+  JAL,
+  OP_IMM,
+  OP,
+  SYSTEM,
+  AUIPC,
+  LUI,
+  MSCMEM,
+  // stub opcode
+  UNDEFINED
 };
 
-struct OpcodeDesc
-{
-    uint8_t opcode;
-    CmdFormat format;
+struct OpcodeDesc {
+  uint8_t opcode;
+  CmdFormat format;
 };
 
 // Commands description
-enum class Cmd : uint8_t
-{
-    LUI,
-    AUIPC,
-    JAL,
-    JALR,
-    BEQ,
-    BNE,
-    BLT,
-    BGE,
-    BLTU,
-    BGEU,
-    LB,
-    LH,
-    LW,
-    LBU,
-    LHU,
-    SB,
-    SH,
-    SW,
-    ADDI,
-    SLTI,
-    SLTIU,
-    XORI,
-    ORI,
-    ANDI,
-    SLLI,
-    SRLI,
-    SRAI,
-    ADD,
-    SUB,
-    SLL,
-    SLT,
-    SLTU,
-    XOR,
-    SRL,
-    SRA,
-    OR,
-    AND,
-    ECALL,
-    EBREAK,
-    URET,
-    SRET,
-    MRET,
-    WFI,
-    FENCE,
-    CSRRW,
-    CSRRS,
-    CSRRC,
-    CSRRWI,
-    CSRRSI,
-    CSRRCI,
-    // RV32M standard extension
-    MUL,
-    MULH,
-    MULHSU,
-    MULHU,
-    DIV,
-    DIVU,
-    REM,
-    REMU,
-    // stub command
-    UNDEFINED
+enum class Cmd : uint8_t {
+  LUI,
+  AUIPC,
+  JAL,
+  JALR,
+  BEQ,
+  BNE,
+  BLT,
+  BGE,
+  BLTU,
+  BGEU,
+  LB,
+  LH,
+  LW,
+  LBU,
+  LHU,
+  SB,
+  SH,
+  SW,
+  ADDI,
+  SLTI,
+  SLTIU,
+  XORI,
+  ORI,
+  ANDI,
+  SLLI,
+  SRLI,
+  SRAI,
+  ADD,
+  SUB,
+  SLL,
+  SLT,
+  SLTU,
+  XOR,
+  SRL,
+  SRA,
+  OR,
+  AND,
+  ECALL,
+  EBREAK,
+  URET,
+  SRET,
+  MRET,
+  WFI,
+  FENCE,
+  CSRRW,
+  CSRRS,
+  CSRRC,
+  CSRRWI,
+  CSRRSI,
+  CSRRCI,
+  // RV32M standard extension
+  MUL,
+  MULH,
+  MULHSU,
+  MULHU,
+  DIV,
+  DIVU,
+  REM,
+  REMU,
+  // stub command
+  UNDEFINED
 };
 
 // Regs description
-enum class Regs : uint8_t
-{
-    zero,
-    ra,
-    sp,
-    gp,
-    tp,
-    t0,
-    t1,
-    t2,
-    s0,
-    s1,
-    a0,
-    a1,
-    a2,
-    a3,
-    a4,
-    a5,
-    a6,
-    a7,
-    s2,
-    s3,
-    s4,
-    s5,
-    s6,
-    s7,
-    s8,
-    s9,
-    s10,
-    s11,
-    t3,
-    t4,
-    t5,
-    t6
+enum class Regs : uint8_t {
+  zero,
+  ra,
+  sp,
+  gp,
+  tp,
+  t0,
+  t1,
+  t2,
+  s0,
+  s1,
+  a0,
+  a1,
+  a2,
+  a3,
+  a4,
+  a5,
+  a6,
+  a7,
+  s2,
+  s3,
+  s4,
+  s5,
+  s6,
+  s7,
+  s8,
+  s9,
+  s10,
+  s11,
+  t3,
+  t4,
+  t5,
+  t6
 };
 
-struct CmdDesc
-{
-    const char *name;
-    ExecFunc exec_func;
-    TranslateFunc translate_func;
-    Opcode opcode;
-    uint8_t funct3 = 0, funct7 = 0;
+struct CmdDesc {
+  const char *name;
+  ExecFunc exec_func;
+  TranslateFunc translate_func;
+  Opcode opcode;
+  uint8_t funct3 = 0, funct7 = 0;
 };
 
-size_t GetOpcodesNum();
-const OpcodeDesc &GetOpcodeDesc(uint8_t opcode);
-const OpcodeDesc &GetOpcodeDesc(Opcode opcode);
+size_t getOpcodesNum();
+const OpcodeDesc &getOpcodeDesc(uint8_t opcode);
+const OpcodeDesc &getOpcodeDesc(Opcode opcode);
 
-size_t GetCmdsNum();
-const CmdDesc &GetCmdDesc(uint8_t cmd);
-const CmdDesc &GetCmdDesc(Cmd cmd);
-}   // namespace isa
+size_t getCmdsNum();
+const CmdDesc &getCmdDesc(uint8_t cmd);
+const CmdDesc &getCmdDesc(Cmd cmd);
+} // namespace isa
 
 #endif

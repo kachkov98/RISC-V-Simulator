@@ -4,8 +4,7 @@
 #include "translate_inst.h"
 #include <cassert>
 
-namespace isa
-{
+namespace isa {
 // clang-format off
 static constexpr OpcodeDesc opcode_desc[] =
 {
@@ -86,35 +85,23 @@ static constexpr CmdDesc cmd_desc[] =
 };
 // clang-format on
 
-size_t GetOpcodesNum()
-{
-    return ArrSize(opcode_desc);
+size_t getOpcodesNum() { return ArrSize(opcode_desc); }
+
+const OpcodeDesc &getOpcodeDesc(uint8_t opcode) {
+  assert(opcode < getOpcodesNum());
+  return opcode_desc[opcode];
 }
 
-const OpcodeDesc &GetOpcodeDesc(uint8_t opcode)
-{
-    assert(opcode < GetOpcodesNum());
-    return opcode_desc[opcode];
+const OpcodeDesc &getOpcodeDesc(Opcode opcode) {
+  return getOpcodeDesc(static_cast<uint8_t>(opcode));
 }
 
-const OpcodeDesc &GetOpcodeDesc(Opcode opcode)
-{
-    return GetOpcodeDesc(static_cast<uint8_t>(opcode));
+size_t getCmdsNum() { return ArrSize(cmd_desc); }
+
+const CmdDesc &getCmdDesc(uint8_t cmd) {
+  assert(cmd < getCmdsNum());
+  return cmd_desc[cmd];
 }
 
-size_t GetCmdsNum()
-{
-    return ArrSize(cmd_desc);
-}
-
-const CmdDesc &GetCmdDesc(uint8_t cmd)
-{
-    assert(cmd < GetCmdsNum());
-    return cmd_desc[cmd];
-}
-
-const CmdDesc &GetCmdDesc(Cmd cmd)
-{
-    return GetCmdDesc(static_cast<uint8_t>(cmd));
-}
-}   // namespace isa
+const CmdDesc &getCmdDesc(Cmd cmd) { return getCmdDesc(static_cast<uint8_t>(cmd)); }
+} // namespace isa

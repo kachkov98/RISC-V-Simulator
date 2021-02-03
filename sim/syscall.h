@@ -3,21 +3,13 @@
 
 #include <cstdint>
 
-namespace sim
-{
+namespace sim {
 class State;
 }
 
-namespace syscall
-{
-enum class SysCall : uint32_t
-{
-    read = 63,
-    write = 64,
-    exit = 93,
-    brk = 214
-};
+namespace syscall {
+enum class SysCall : uint32_t { read = 63, write = 64, exit = 93, brk = 214 };
 
 void ExecSysCall(sim::State *state, SysCall value);
-}   // namespace syscall
+} // namespace syscall
 #endif

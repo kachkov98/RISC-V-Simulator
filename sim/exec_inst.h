@@ -1,13 +1,11 @@
 #ifndef EXEC_INST_H
 #define EXEC_INST_H
 
-namespace ir
-{
+namespace ir {
 class Inst;
 }
 
-namespace sim
-{
+namespace sim {
 class State;
 }
 

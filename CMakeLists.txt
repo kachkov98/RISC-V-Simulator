@@ -1,13 +1,16 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.8)
 
-project(RISC-V-fsim)
+project(riscvsim)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_library(ELF_LIB elf)
 find_library(M_LIB m)
 
-include_directories(asmjit/src)
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+option(ASMJIT_STATIC "" ON)
+option(ASMJIT_NO_BUILDER "" ON)
+option(ASMJIT_NO_COMPILER "" ON)
+add_subdirectory(asmjit)
 
 set(SIM_DIR sim)
 set(SIM_SRC
@@ -20,13 +23,11 @@ set(SIM_SRC
     ${SIM_DIR}/main.cpp
     ${SIM_DIR}/options.cpp
     ${SIM_DIR}/sim.cpp
+    ${SIM_DIR}/stats.cpp
     ${SIM_DIR}/syscall.cpp
     ${SIM_DIR}/translate_inst.cpp)
 
-set_source_files_properties(${SIM_SRC} PROPERTIES COMPILE_FLAGS
-    "-std=c++17 -Wall -Wextra -Wno-packed-bitfield-compat")
-
-add_subdirectory(asmjit)
-add_executable(riscvsim "${SIM_SRC}")
-
-target_link_libraries(riscvsim asmjit ${ELF_LIB} ${M_LIB})
+add_executable(${PROJECT_NAME} ${SIM_SRC})
+target_include_directories(${PROJECT_NAME} PRIVATE asmjit/src)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
+target_link_libraries(${PROJECT_NAME} asmjit ${ELF_LIB} ${M_LIB})

@@ -1,13 +1,11 @@
 #ifndef TRANSLATE_INST_H
 #define TRANSLATE_INST_H
 
-namespace ir
-{
+namespace ir {
 class Inst;
 }
 
-namespace jit
-{
+namespace jit {
 class Translator;
 }
 
