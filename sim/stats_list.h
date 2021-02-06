@@ -1,6 +1,5 @@
 // clang-format off
 //       name                       description
-STAT_DEF(executed_insts,            "Number of instructions executed")
 STAT_DEF(trace_cache_hits,          "Trace cache hits")
 STAT_DEF(trace_cache_misses,        "Trace cache misses")
 STAT_DEF(itlb_hits,                 "iTLB hits")

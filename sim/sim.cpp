@@ -4,13 +4,36 @@
 
 namespace sim {
 // State
+TraceCache State::trace_cache(options::cache_size);
+MMU State::mmu;
+uint32_t MMU::satp = 0x00000017u;
+
+
+State::State(const std::vector<std::vector<uint32_t>> &commands, const std::vector<uint32_t> &seg_va,
+        uint32_t pc)
+      : pc(pc),
+        mem(mmu.getMem()),
+        executed_insts(0) {
+  regs.fill(0u);
+  // Allocate 2 pages for stack
+  setReg(isa::Regs::sp, mmu.getMemSize() - 2 * MMU::pagesize);
+  // put segment in pmem_ (pa = va)
+  int i = 0;
+  for (auto va : seg_va) {
+    if (va + commands[i].size() * 4 > mmu.getMemSize())
+      throw SimException("Not enough memory to load segment");
+    memcpy(mmu.getMemPtr<uint8_t>(va), commands[i].data(), commands[i].size() * 4);
+    ++i;
+  }
+}
+
 void State::dump(FILE *f) const {
   fprintf(f, "Processor state:\n");
   for (uint8_t i = 0; i < 32; ++i) {
     ir::Reg(i).dump(f);
-    fprintf(f, ": 0x%08X%c", regs_[i], (i + 1) % 4 ? '\t' : '\n');
+    fprintf(f, ": 0x%08X%c", regs[i], (i + 1) % 4 ? '\t' : '\n');
   }
-  fprintf(f, "PC: 0x%08X\n", pc_);
+  fprintf(f, "PC: 0x%08X\n", pc);
 }
 
 // Trace
@@ -19,9 +42,7 @@ Trace::Trace(const Decoder &decoder, State &state) {
   while (true) {
     ir::Inst inst = decoder.decode(state.getCmd(address));
     trace_.push_back(inst);
-    isa::Opcode opcode = isa::getCmdDesc(trace_.back().getCmd()).opcode;
-    if (opcode == isa::Opcode::BRANCH || opcode == isa::Opcode::JALR ||
-        opcode == isa::Opcode::JAL || inst.getCmd() == isa::Cmd::FENCE)
+    if (inst.isTerminator())
       break;
     address += 4;
   }
@@ -51,9 +72,9 @@ void Trace::execute(State *state) const {
     ++stats::translated_executions;
   } else {
     trace_.data()->exec(trace_.data(), state);
+    state->executed_insts += trace_.size();
     ++stats::interpreted_executions;
   }
-  stats::executed_insts += trace_.size();
   if (options::verbose)
     state->dump(options::log);
 }
@@ -79,25 +100,25 @@ void TraceCache::dump(FILE *f) const {
 
 // Sim
 Sim::Sim(const std::vector<std::vector<uint32_t>> &commands, const std::vector<uint32_t> &seg_va,
-         uint32_t pc)
-    : state_(commands, seg_va, pc) {}
+         uint32_t pc):
+      state_(commands, seg_va, pc) {}
 
 void Sim::execute() {
   Timer timer;
   try {
     while (true) {
-      state_.trace_cache.refer(decoder_, state_, state_.getPC()).execute(&state_);
-      if (options::max_insts && stats::executed_insts >= options::max_insts)
+      State::trace_cache.refer(decoder_, state_, state_.getPC()).execute(&state_);
+      if (options::max_insts && state_.executed_insts >= options::max_insts)
         break;
     }
   } catch (SimException &e) {
     fprintf(options::log, "%s\n", e.what());
   }
-  uint64_t time = timer.getMilliseconds();
+  uint64_t time = timer.getMicroseconds();
   state_.dump(options::log);
   fprintf(options::log, "Some statistics:\n");
-  fprintf(options::log, "Time: %lu ms, MIPS: %.3lf\n", time,
-          (double)stats::executed_insts / (time * 1000));
+  fprintf(options::log, "Insts num: %lu, Time: %lu ms, MIPS: %.3lf\n", state_.executed_insts, time / 1000,
+          (double)state_.executed_insts / time);
   stats::PrintStatistics(options::log);
 }
 } // namespace sim

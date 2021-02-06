@@ -5,6 +5,7 @@
 #include "stats.h"
 #include <memory>
 
+namespace sim {
 class MMU {
 private:
   enum AccessType { READ, WRITE, EXEC };
@@ -23,7 +24,6 @@ private:
   mutable LRUCache<uint32_t, PhysAddr> dataTLB_;
   uint64_t pmem_size_;
   std::unique_ptr<uint8_t[]> pmem_;
-  uint32_t &satp_;
 
 public:
   static constexpr uint32_t pagesize = 4096u;
@@ -31,10 +31,12 @@ public:
   static constexpr uint8_t levels = 2;
   static constexpr uint8_t ptesize = 4;
 
-  MMU(uint32_t &satp)
+  static uint32_t satp;
+
+  MMU()
       : instTLB_(options::itlb_size), dataTLB_(options::dtlb_size),
-        pmem_size_(options::mem_pages * MMU::pagesize), pmem_(new uint8_t[pmem_size_]),
-        satp_(satp) {}
+        pmem_size_(options::mem_pages * MMU::pagesize), pmem_(new uint8_t[pmem_size_])
+  {}
 
   MMU(const MMU &that) = delete;
   MMU(MMU &&that) = delete;
@@ -46,6 +48,10 @@ public:
     dataTLB_.clear();
   }
 
+  uint8_t *getMem() const {
+    return pmem_.get();
+  }
+
   uint64_t getMemSize() const { return pmem_size_; }
 
   template <typename T> T *getMemPtr(uint32_t pa) const {
@@ -55,10 +61,10 @@ public:
   }
 
   uint64_t translate(uint32_t va, AccessType acc) const {
-    if (satp_ >> 31 == 0) {
+    if (satp >> 31 == 0) {
       return va;
     }
-    uint64_t table_pa = (satp_ & 0x3fffff) * pagesize;
+    uint64_t table_pa = (satp & 0x3fffff) * pagesize;
     int8_t i = levels - 1;
     uint32_t *pte;
 
@@ -105,7 +111,7 @@ public:
   uint32_t load(uint32_t va, uint8_t nbytes, bool instRead = true) {
     uint64_t pa;
 
-    if (satp_ >> 31 == 0) {
+    if (satp >> 31 == 0) {
       pa = va;
     } else {
       auto res = instRead ? instTLB_.insert(va, *this, va, MMU::AccessType::EXEC)
@@ -122,7 +128,7 @@ public:
   void store(uint32_t va, uint8_t nbytes, uint32_t data) {
     uint64_t pa;
 
-    if (satp_ >> 31 == 0) {
+    if (satp >> 31 == 0) {
       pa = va;
     } else {
       auto res = dataTLB_.insert(va, *this, va, MMU::AccessType::WRITE);
@@ -132,5 +138,5 @@ public:
     *getMemPtr<uint32_t>(pa) = data & (nbytes == 4 ? 0xffffffff : ((1 << (8 * nbytes)) - 1));
   }
 };
-
+}
 #endif

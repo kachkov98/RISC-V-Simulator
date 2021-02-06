@@ -2,6 +2,7 @@
 #include "jit.h"
 
 #define EMIT(...) (tr.getAsm().emit(__VA_ARGS__))
+#define EMIT_MOV(DST, SRC) (TranslateMove(tr, (DST), (SRC)))
 #define LABEL(name) (tr.getAsm().bind(name))
 #define TMP (tr.getTmp())
 #define RS1 (tr.getReg(inst->getRs1()))
@@ -17,9 +18,17 @@
 using namespace asmjit;
 
 // Helper functions for common translation templates
+
+void TranslateMove(const jit::Translator &tr, const Operand &dst, const Operand &src) {
+  if (dst.isReg() && src == Imm(0))
+    EMIT(x86::Inst::kIdXor, dst, dst);
+  else
+    EMIT(x86::Inst::kIdMov, dst, src);
+}
+
 void TranslateLoad(const jit::Translator &tr, const ir::Inst *inst, uint8_t num_bytes) {
 #if 0
-    tr.SaveAllRegs();
+    tr.saveAllRegs();
     EMIT(x86::Inst::kIdMov, x86::esi, RS1);
     EMIT(x86::Inst::kIdAdd, x86::esi, Imm(IMM));
     EMIT(x86::Inst::kIdMov, x86::edx, Imm(num_bytes));
@@ -27,17 +36,17 @@ void TranslateLoad(const jit::Translator &tr, const ir::Inst *inst, uint8_t num_
     EMIT(x86::Inst::kIdLea, x86::rdi, tr.getMMU());
     EMIT(x86::Inst::kIdCall, tr.getLoadFunc());
     EMIT(x86::Inst::kIdPop, x86::rdi);
-    tr.RestoreAllRegs();
-#endif
-  EMIT(x86::Inst::kIdMov, TMP, RS1);
-  EMIT(x86::Inst::kIdAdd, TMP, Imm(IMM));
+    tr.restoreAllRegs();
+#else
+  EMIT_MOV(TMP, RS1);
   EMIT(x86::Inst::kIdAdd, x86::rsi, MEM);
-  EMIT(x86::Inst::kIdMov, x86::eax, x86::ptr_32(x86::rsi));
+  EMIT_MOV(x86::eax, x86::ptr_32(x86::rsi, IMM));
+#endif
 }
 
 void TranslateStore(const jit::Translator &tr, const ir::Inst *inst, uint8_t num_bytes) {
 #if 0
-    tr.SaveAllRegs();
+    tr.saveAllRegs();
     EMIT(x86::Inst::kIdMov, x86::esi, RS1);
     EMIT(x86::Inst::kIdAdd, x86::esi, Imm(IMM));
     EMIT(x86::Inst::kIdMov, x86::edx, Imm(num_bytes));
@@ -46,35 +55,43 @@ void TranslateStore(const jit::Translator &tr, const ir::Inst *inst, uint8_t num
     EMIT(x86::Inst::kIdLea, x86::rdi, tr.getMMU());
     EMIT(x86::Inst::kIdCall, tr.getStoreFunc());
     EMIT(x86::Inst::kIdPop, x86::rdi);
-    tr.RestoreAllRegs();
-#endif
-  EMIT(x86::Inst::kIdMov, TMP, RS1);
-  EMIT(x86::Inst::kIdAdd, TMP, Imm(IMM));
+    tr.restoreAllRegs();
+#else
+  EMIT_MOV(TMP, RS1);
   EMIT(x86::Inst::kIdAdd, x86::rsi, MEM);
-  EMIT(x86::Inst::kIdMov, x86::eax, RS2);
+  EMIT_MOV(x86::eax, RS2);
   if (num_bytes == 1)
-    EMIT(x86::Inst::kIdMov, x86::ptr_8(x86::rsi), x86::al);
+    EMIT_MOV(x86::ptr_8(x86::rsi, IMM), x86::al);
   else if (num_bytes == 2)
-    EMIT(x86::Inst::kIdMov, x86::ptr_16(x86::rsi), x86::ax);
+    EMIT_MOV(x86::ptr_16(x86::rsi, IMM), x86::ax);
   else
-    EMIT(x86::Inst::kIdMov, x86::ptr_32(x86::rsi), x86::eax);
+    EMIT_MOV(x86::ptr_32(x86::rsi, IMM), x86::eax);
+#endif
 }
 
 void TranslateCondBranch(const jit::Translator &tr, const ir::Inst *inst, x86::Inst::Id cmp_inst) {
-  Label taken = tr.getAsm().newLabel();
-  Label exit = tr.getAsm().newLabel();
   Operand FST = RS1;
-  if (RS1.isMem()) {
-    EMIT(x86::Inst::kIdMov, TMP, RS1);
+  if (RS1.isMem() || RS1.isImm()) {
+    EMIT_MOV(TMP, RS1);
     FST = TMP;
   }
   EMIT(x86::Inst::kIdCmp, FST, RS2);
-  EMIT(cmp_inst, taken);
-  EMIT(x86::Inst::kIdAdd, PC, Imm(OFFSET + 4));
-  EMIT(x86::Inst::kIdJmp, exit);
-  tr.getAsm().bind(taken);
-  EMIT(x86::Inst::kIdAdd, PC, Imm(OFFSET + IMM * 2));
-  tr.getAsm().bind(exit);
+  auto taken_offset = OFFSET + IMM * 2;
+  if (taken_offset) {
+    Label taken = tr.getAsm().newLabel();
+    Label exit = tr.getAsm().newLabel();
+    EMIT(cmp_inst, taken);
+    EMIT(x86::Inst::kIdAdd, PC, Imm(OFFSET + 4));
+    EMIT(x86::Inst::kIdJmp, exit);
+    tr.getAsm().bind(taken);
+    EMIT(x86::Inst::kIdAdd, PC, Imm(taken_offset));
+    tr.getAsm().bind(exit);
+  }
+  else {
+    tr.deallocateAllRegs();
+    EMIT(cmp_inst, tr.getFunctionStart());
+    EMIT(x86::Inst::kIdAdd, PC, Imm(OFFSET + 4));
+  }
   END_TRACE();
 }
 
@@ -83,11 +100,11 @@ void TranslateImmType(const jit::Translator &tr, const ir::Inst *inst, x86::Inst
     return;
   Operand DST = RD.isMem() ? TMP : RD;
   if (DST != RS1)
-    EMIT(x86::Inst::kIdMov, DST, RS1);
+    EMIT_MOV(DST, RS1);
   if (opcode_inst != x86::Inst::kIdMov)
     EMIT(opcode_inst, DST, Imm(IMM));
   if (RD.isMem())
-    EMIT(x86::Inst::kIdMov, RD, TMP);
+    EMIT_MOV(RD, TMP);
 }
 
 void TranslateRegType(const jit::Translator &tr, const ir::Inst *inst, x86::Inst::Id opcode_inst) {
@@ -102,10 +119,10 @@ void TranslateRegType(const jit::Translator &tr, const ir::Inst *inst, x86::Inst
     if (RD.isMem())
         EMIT(x86::Inst::kIdMov, RD, TMP);
 #endif
-  EMIT(x86::Inst::kIdMov, TMP, RS1);
+  EMIT_MOV(TMP, RS1);
   if (opcode_inst != x86::Inst::kIdMov)
     EMIT(opcode_inst, TMP, RS2);
-  EMIT(x86::Inst::kIdMov, RD, TMP);
+  EMIT_MOV(RD, TMP);
 }
 
 void TranslateShift(const jit::Translator &tr, const ir::Inst *inst, x86::Inst::Id shift_inst) {
@@ -113,48 +130,48 @@ void TranslateShift(const jit::Translator &tr, const ir::Inst *inst, x86::Inst::
     return;
   Operand DST = RD.isMem() ? TMP : RD;
   if (DST != RS1)
-    EMIT(x86::Inst::kIdMov, DST, RS1);
+    EMIT_MOV(DST, RS1);
   if (RD.isMem())
-    EMIT(x86::Inst::kIdMov, RD, TMP);
+    EMIT_MOV(RD, TMP);
   if (!inst->getRs2())
     return;
-  EMIT(x86::Inst::kIdMov, TMP, x86::ecx);
-  EMIT(x86::Inst::kIdMov, x86::ecx, RS2);
+  EMIT_MOV(TMP, x86::ecx);
+  EMIT_MOV(x86::ecx, RS2);
   EMIT(shift_inst, RD, x86::cl);
-  EMIT(x86::Inst::kIdMov, x86::ecx, TMP);
+  EMIT_MOV(x86::ecx, TMP);
 }
 // end of helper functions
 
 void TranslateLB(const jit::Translator &tr, const ir::Inst *inst) {
   TranslateLoad(tr, inst, 1);
   EMIT(x86::Inst::kIdMovsx, TMP, x86::al);
-  EMIT(x86::Inst::kIdMov, RD, TMP);
+  EMIT_MOV(RD, TMP);
 }
 
 void TranslateLH(const jit::Translator &tr, const ir::Inst *inst) {
   TranslateLoad(tr, inst, 2);
   EMIT(x86::Inst::kIdMovsx, TMP, x86::ax);
-  EMIT(x86::Inst::kIdMov, RD, TMP);
+  EMIT_MOV(RD, TMP);
 }
 
 void TranslateLW(const jit::Translator &tr, const ir::Inst *inst) {
   TranslateLoad(tr, inst, 4);
-  EMIT(x86::Inst::kIdMov, RD, x86::eax);
+  EMIT_MOV(RD, x86::eax);
 }
 
 void TranslateLBU(const jit::Translator &tr, const ir::Inst *inst) {
   TranslateLoad(tr, inst, 1);
-  EMIT(x86::Inst::kIdMov, RD, x86::eax);
+  EMIT_MOV(RD, x86::eax);
 }
 
 void TranslateLHU(const jit::Translator &tr, const ir::Inst *inst) {
   TranslateLoad(tr, inst, 2);
-  EMIT(x86::Inst::kIdMov, RD, x86::eax);
+  EMIT_MOV(RD, x86::eax);
 }
 
 void TranslateLWU(const jit::Translator &tr, const ir::Inst *inst) {
   TranslateLoad(tr, inst, 4);
-  EMIT(x86::Inst::kIdMov, RD, x86::eax);
+  EMIT_MOV(RD, x86::eax);
 }
 
 void TranslateSB(const jit::Translator &tr, const ir::Inst *inst) { TranslateStore(tr, inst, 1); }
@@ -164,19 +181,19 @@ void TranslateSH(const jit::Translator &tr, const ir::Inst *inst) { TranslateSto
 void TranslateSW(const jit::Translator &tr, const ir::Inst *inst) { TranslateStore(tr, inst, 4); }
 
 void TranslateLUI(const jit::Translator &tr, const ir::Inst *inst) {
-  EMIT(x86::Inst::kIdMov, RD, Imm(UIMM));
+  EMIT_MOV(RD, Imm(UIMM));
 }
 
 void TranslateAUIPC(const jit::Translator &tr, const ir::Inst *inst) {
-  EMIT(x86::Inst::kIdMov, TMP, PC);
+  EMIT_MOV(TMP, PC);
   EMIT(x86::Inst::kIdAdd, TMP, Imm(OFFSET + UIMM));
-  EMIT(x86::Inst::kIdMov, RD, TMP);
+  EMIT_MOV(RD, TMP);
 }
 
 void TranslateJAL(const jit::Translator &tr, const ir::Inst *inst) {
   if (inst->getRd()) {
-    EMIT(x86::Inst::kIdMov, TMP, PC);
-    EMIT(x86::Inst::kIdMov, RD, TMP);
+    EMIT_MOV(TMP, PC);
+    EMIT_MOV(RD, TMP);
     EMIT(x86::Inst::kIdAdd, RD, Imm(OFFSET + 4));
     EMIT(x86::Inst::kIdAdd, PC, Imm(OFFSET + IMM * 2));
   } else {
@@ -186,13 +203,13 @@ void TranslateJAL(const jit::Translator &tr, const ir::Inst *inst) {
 }
 
 void TranslateJALR(const jit::Translator &tr, const ir::Inst *inst) {
-  EMIT(x86::Inst::kIdMov, TMP, PC);
-  EMIT(x86::Inst::kIdAdd, TMP, Imm(OFFSET + 4));
-  EMIT(x86::Inst::kIdMov, RD, TMP);
-  EMIT(x86::Inst::kIdMov, TMP, RS1);
+  EMIT(x86::Inst::kIdAdd, PC, Imm(OFFSET + 4));
+  EMIT_MOV(TMP, PC);
+  EMIT_MOV(RD, TMP);
+  EMIT_MOV(TMP, RS1);
   EMIT(x86::Inst::kIdAdd, TMP, Imm(IMM));
   EMIT(x86::Inst::kIdAnd, TMP, Imm(~1u));
-  EMIT(x86::Inst::kIdMov, PC, TMP);
+  EMIT_MOV(PC, TMP);
   END_TRACE();
 }
 
@@ -274,8 +291,8 @@ void TranslateSLL(const jit::Translator &tr, const ir::Inst *inst) {
 
 void TranslateSLT(const jit::Translator &tr, const ir::Inst *inst) {
   Operand FST = RS1;
-  if (RS1.isMem()) {
-    EMIT(x86::Inst::kIdMov, TMP, RS1);
+  if (RS1.isMem() || RS1.isImm()) {
+    EMIT_MOV(TMP, RS1);
     FST = TMP;
   }
   EMIT(x86::Inst::kIdCmp, FST, RS2);
@@ -285,8 +302,8 @@ void TranslateSLT(const jit::Translator &tr, const ir::Inst *inst) {
 
 void TranslateSLTU(const jit::Translator &tr, const ir::Inst *inst) {
   Operand FST = RS1;
-  if (RS1.isMem()) {
-    EMIT(x86::Inst::kIdMov, TMP, RS1);
+  if (RS1.isMem() || RS1.isImm()) {
+    EMIT_MOV(TMP, RS1);
     FST = TMP;
   }
   EMIT(x86::Inst::kIdCmp, FST, RS2);

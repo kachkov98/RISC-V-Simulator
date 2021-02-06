@@ -28,19 +28,24 @@ public:
   ExecTracePtr getFunc() const { return func_; }
   asmjit::x86::Assembler &getAsm() const { return x86asm_; }
   asmjit::Operand getReg(ir::Reg reg) const;
+  asmjit::Operand getPc() const;
   asmjit::Operand getTmp() const { return asmjit::x86::esi; }
-  asmjit::Operand getMMU() const;
+  asmjit::Operand getMem() const;
   asmjit::Operand getLoadFunc() const;
   asmjit::Operand getStoreFunc() const;
-  asmjit::Operand getMem() const;
-  asmjit::Operand getPc() const;
+  asmjit::Label getFunctionStart() const { return func_start_; };
   size_t getOffset() const { return cur_inst_ * 4; }
 
   void saveAllRegs() const;
   void restoreAllRegs() const;
 
+  void deallocateAllRegs() const {
+    for (unsigned i = 1; i < 32; ++i)
+      deallocateReg(i, true);
+  }
 private:
   ExecTracePtr func_ = nullptr;
+  asmjit::Label func_start_;
   size_t cur_inst_;
 
   mutable asmjit::CodeHolder code_;

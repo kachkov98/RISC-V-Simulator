@@ -28,9 +28,9 @@ public:
   Timer() : start_time_(std::chrono::high_resolution_clock::now()) {}
   Timer(const Timer &) = delete;
   Timer operator=(const Timer &) = delete;
-  uint64_t getMilliseconds() const {
+  uint64_t getMicroseconds() const {
     auto time_diff = std::chrono::high_resolution_clock::now() - start_time_;
-    return std::chrono::duration_cast<std::chrono::milliseconds>(time_diff).count();
+    return std::chrono::duration_cast<std::chrono::microseconds>(time_diff).count();
   }
 
 private:

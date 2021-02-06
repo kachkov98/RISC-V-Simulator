@@ -40,7 +40,7 @@ void ExecECALL([[maybe_unused]] const ir::Inst *fst_inst, [[maybe_unused]] const
 }
 
 void ExecFENCE(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state) {
-  state->flush();
+  sim::State::flush();
   SET_PC(GET_PC() + OFFSET + 4);
   END_TRACE();
 }
@@ -258,7 +258,7 @@ void ExecAND(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *sta
 void ExecCSRRW(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state) {
   if (IMM != 0x180)
     throw SimException("Not satp sysreg is not supported");
-  state->satp |= RS1 & 0x80000000ul;
+  sim::MMU::satp |= RS1 & 0x80000000ul;
   NEXT_INST();
 }
 

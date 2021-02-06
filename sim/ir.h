@@ -72,6 +72,18 @@ public:
     ;
   }
   isa::CmdFormat getCmdFormat() const { return isa::getOpcodeDesc(getOpcode()).format; }
+  bool isTerminator() const {
+    if (getCmd() == isa::Cmd::FENCE)
+      return true;
+    switch (getOpcode()) {
+      case isa::Opcode::BRANCH:
+      case isa::Opcode::JALR:
+      case isa::Opcode::JAL:
+        return true;
+      default:
+        return false;
+    }
+  }
   void dump(FILE *f) const;
   void exec(const ir::Inst *fst_inst, sim::State *state) const { func_(fst_inst, this, state); }
   bool isTranslationSupported() const { return isa::getCmdDesc(cmd_).translate_func != nullptr; }

@@ -4,9 +4,9 @@
 
 using namespace asmjit;
 
-uint32_t Load(MMU *mmu, uint32_t va, uint8_t nbytes) { return mmu->load(va, nbytes, true); }
+uint32_t Load(uint32_t va, uint8_t nbytes) { return sim::State::mmu.load(va, nbytes, true); }
 
-void Store(MMU *mmu, uint32_t va, uint8_t nbytes, uint32_t data) { mmu->store(va, nbytes, data); }
+void Store(uint32_t va, uint8_t nbytes, uint32_t data) { sim::State::mmu.store(va, nbytes, data); }
 
 namespace jit {
 
@@ -36,6 +36,10 @@ Translator::Translator(const std::vector<ir::Inst> &trace) : logger_(options::lo
       log("%s\n", info.to_string().c_str());
   }
 
+  func_start_ = getAsm().newLabel();
+  getAsm().bind(func_start_);
+  size_t offset = offsetof(sim::State, executed_insts);
+  getAsm().emit(x86::Inst::kIdAdd, x86::ptr_64(x86::rdi, offset), Imm(trace.size()));
   for (cur_inst_ = 0; cur_inst_ < trace.size(); ++cur_inst_) {
     const ir::Inst &inst = trace[cur_inst_];
     // Regalloc pre-work
@@ -61,19 +65,17 @@ Translator::Translator(const std::vector<ir::Inst> &trace) : logger_(options::lo
 
 Operand Translator::getReg(ir::Reg reg) const { return reg ? reg_mapping_[reg] : Imm(0); }
 
-Operand Translator::getMMU() const {
-  size_t offset = offsetof(sim::State, mmu_);
-  return x86::ptr_64(asmjit::x86::rdi, offset);
-}
-
 Operand Translator::getLoadFunc() const { return Imm(reinterpret_cast<uint64_t>(&Load)); }
 
 Operand Translator::getStoreFunc() const { return Imm(reinterpret_cast<uint64_t>(&Store)); }
 
-Operand Translator::getMem() const { return x86::ptr_64(x86::rdi, offsetof(sim::State, mem_)); }
+Operand Translator::getMem() const {
+  size_t offset = offsetof(sim::State, mem);
+  return x86::ptr_64(x86::rdi, offset);
+}
 
 Operand Translator::getPc() const {
-  size_t offset = offsetof(sim::State, pc_);
+  size_t offset = offsetof(sim::State, pc);
   return x86::ptr_32(x86::rdi, offset);
 }
 
@@ -104,7 +106,7 @@ void Translator::calcLiveness(const std::vector<ir::Inst> &trace) {
 }
 
 x86::Mem Translator::getRegMemOp(ir::Reg reg) const {
-  return x86::ptr_32(x86::rdi, offsetof(sim::State, regs_) + reg * 4);
+  return x86::ptr_32(x86::rdi, offsetof(sim::State, regs) + reg * 4);
 }
 
 void Translator::allocateReg(ir::Reg reg, bool load) const {
