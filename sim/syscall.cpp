@@ -1,10 +1,11 @@
 #include "syscall.h"
 #include "sim.h"
 #include <cstdio>
+#include <sys/time.h>
 
 namespace syscall {
 void ExecClose(sim::State *state) {
-  printf("Close syscall!\n");
+  printf("close syscall!\n");
   state->setReg(isa::Regs::a0, 0);
 }
 
@@ -34,14 +35,27 @@ void ExecWrite(sim::State *state) {
 }
 
 void ExecFstat(sim::State *state) {
-  printf("Fstat syscall!\n");
+  printf("fstat syscall!\n");
   state->setReg(isa::Regs::a0, 0);
 }
 
-void ExecExit([[maybe_unused]] sim::State *state) { throw SimException("Successfully finished!\n"); }
+void ExecExit([[maybe_unused]] sim::State *state) {
+  throw SimException("Successfully finished!\n");
+}
 
-void ExecBrk([[maybe_unused]] sim::State *state) {
-  printf("Brk syscall!\n");
+void ExecGetTimeOfDay(sim::State *state) {
+  printf("gettimeofday syscall!\n");
+  const uint32_t a0 = state->getReg(isa::Regs::a0);
+  const uint32_t a1 = state->getReg(isa::Regs::a1);
+  struct timeval tv;
+  struct timezone tz;
+  state->setReg(isa::Regs::a0, gettimeofday(&tv, &tz));
+  state->write<struct timeval>(a0, tv);
+  state->write<struct timezone>(a1, tz);
+}
+
+void ExecBrk(sim::State *state) {
+  printf("brk syscall!\n");
   state->setReg(isa::Regs::a0, 0);
 }
 
@@ -61,6 +75,9 @@ void ExecSysCall(sim::State *state, SysCall value) {
     break;
   case SysCall::exit:
     ExecExit(state);
+    break;
+  case SysCall::gettimeofday:
+    ExecGetTimeOfDay(state);
     break;
   case SysCall::brk:
     ExecBrk(state);

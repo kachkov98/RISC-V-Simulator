@@ -51,4 +51,8 @@ void TranslateSRA(const jit::Translator &tr, const ir::Inst *inst);
 void TranslateOR(const jit::Translator &tr, const ir::Inst *inst);
 void TranslateAND(const jit::Translator &tr, const ir::Inst *inst);
 
+// RV32M standard extension
+void TranslateMUL(const jit::Translator &tr, const ir::Inst *inst);
+void TranslateMULH(const jit::Translator &tr, const ir::Inst *inst);
+
 #endif

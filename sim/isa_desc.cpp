@@ -74,8 +74,8 @@ static constexpr CmdDesc cmd_desc[] =
     {"CSRRSI", &ExecDummy, nullptr,         Opcode::SYSTEM, 0b110},
     {"CSRRCI", &ExecDummy, nullptr,         Opcode::SYSTEM, 0b111},
     // RV32M standard extension
-    {"MUL",    &ExecMUL,   nullptr,         Opcode::OP,     0b000, 0b0000001},
-    {"MULH",   &ExecMULH,  nullptr,         Opcode::OP,     0b001, 0b0000001},
+    {"MUL",    &ExecMUL,   &TranslateMUL,   Opcode::OP,     0b000, 0b0000001},
+    {"MULH",   &ExecMULH,  &TranslateMULH,  Opcode::OP,     0b001, 0b0000001},
     {"MULHSU", &ExecMULHSU,nullptr,         Opcode::OP,     0b010, 0b0000001},
     {"MULHU",  &ExecMULHU, nullptr,         Opcode::OP,     0b011, 0b0000001},
     {"DIV",    &ExecDIV,   nullptr,         Opcode::OP,     0b100, 0b0000001},

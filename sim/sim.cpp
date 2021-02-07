@@ -8,12 +8,9 @@ TraceCache State::trace_cache(options::cache_size);
 MMU State::mmu;
 uint32_t MMU::satp = 0x00000017u;
 
-
-State::State(const std::vector<std::vector<uint32_t>> &commands, const std::vector<uint32_t> &seg_va,
-        uint32_t pc)
-      : pc(pc),
-        mem(mmu.getMem()),
-        executed_insts(0) {
+State::State(const std::vector<std::vector<uint32_t>> &commands,
+             const std::vector<uint32_t> &seg_va, uint32_t pc)
+    : pc(pc), mem(mmu.getMem()), executed_insts(0) {
   regs.fill(0u);
   // Allocate 2 pages for stack
   setReg(isa::Regs::sp, mmu.getMemSize() - 2 * MMU::pagesize);
@@ -100,8 +97,8 @@ void TraceCache::dump(FILE *f) const {
 
 // Sim
 Sim::Sim(const std::vector<std::vector<uint32_t>> &commands, const std::vector<uint32_t> &seg_va,
-         uint32_t pc):
-      state_(commands, seg_va, pc) {}
+         uint32_t pc)
+    : state_(commands, seg_va, pc) {}
 
 void Sim::execute() {
   Timer timer;
@@ -117,8 +114,8 @@ void Sim::execute() {
   uint64_t time = timer.getMicroseconds();
   state_.dump(options::log);
   fprintf(options::log, "Some statistics:\n");
-  fprintf(options::log, "Insts num: %lu, Time: %lu ms, MIPS: %.3lf\n", state_.executed_insts, time / 1000,
-          (double)state_.executed_insts / time);
+  fprintf(options::log, "Insts num: %lu, Time: %lu ms, MIPS: %.3lf\n", state_.executed_insts,
+          time / 1000, (double)state_.executed_insts / time);
   stats::PrintStatistics(options::log);
 }
 } // namespace sim

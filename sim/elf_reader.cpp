@@ -10,7 +10,7 @@ static inline void print_and_exit(const char *msg, const Args &...args) {
 
 void Elf_reader::init(const char *filename) {
   if (e_ || fd_)
-  clear();
+    clear();
 
   if (elf_version(EV_CURRENT) == EV_NONE)
     print_and_exit("Elf: library initialization failed: %s\n", elf_errmsg(-1));

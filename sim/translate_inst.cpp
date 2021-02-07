@@ -39,13 +39,13 @@ void TranslateLoad(const jit::Translator &tr, const ir::Inst *inst, uint8_t num_
     tr.restoreAllRegs();
 #else
   EMIT_MOV(TMP, RS1);
-  EMIT(x86::Inst::kIdAdd, x86::rsi, MEM);
+  EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
   if (num_bytes == 1)
-    EMIT_MOV(x86::al, x86::ptr_8(x86::rsi, IMM));
+    EMIT_MOV(x86::dl, x86::ptr_8(x86::rax, IMM));
   else if (num_bytes == 2)
-    EMIT_MOV(x86::ax, x86::ptr_16(x86::rsi, IMM));
+    EMIT_MOV(x86::dx, x86::ptr_16(x86::rax, IMM));
   else
-    EMIT_MOV(x86::eax, x86::ptr_32(x86::rsi, IMM));
+    EMIT_MOV(x86::edx, x86::ptr_32(x86::rax, IMM));
 #endif
 }
 
@@ -63,14 +63,14 @@ void TranslateStore(const jit::Translator &tr, const ir::Inst *inst, uint8_t num
     tr.restoreAllRegs();
 #else
   EMIT_MOV(TMP, RS1);
-  EMIT(x86::Inst::kIdAdd, x86::rsi, MEM);
-  EMIT_MOV(x86::eax, RS2);
+  EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
+  EMIT_MOV(x86::edx, RS2);
   if (num_bytes == 1)
-    EMIT_MOV(x86::ptr_8(x86::rsi, IMM), x86::al);
+    EMIT_MOV(x86::ptr_8(x86::rax, IMM), x86::dl);
   else if (num_bytes == 2)
-    EMIT_MOV(x86::ptr_16(x86::rsi, IMM), x86::ax);
+    EMIT_MOV(x86::ptr_16(x86::rax, IMM), x86::dx);
   else
-    EMIT_MOV(x86::ptr_32(x86::rsi, IMM), x86::eax);
+    EMIT_MOV(x86::ptr_32(x86::rax, IMM), x86::edx);
 #endif
 }
 
@@ -91,8 +91,7 @@ void TranslateCondBranch(const jit::Translator &tr, const ir::Inst *inst, x86::I
     tr.getAsm().bind(taken);
     EMIT(x86::Inst::kIdAdd, PC, Imm(taken_offset));
     tr.getAsm().bind(exit);
-  }
-  else {
+  } else {
     tr.deallocateAllRegs();
     EMIT(cmp_inst, tr.getFunctionStart());
     EMIT(x86::Inst::kIdAdd, PC, Imm(OFFSET + 4));
@@ -149,36 +148,36 @@ void TranslateShift(const jit::Translator &tr, const ir::Inst *inst, x86::Inst::
 
 void TranslateLB(const jit::Translator &tr, const ir::Inst *inst) {
   TranslateLoad(tr, inst, 1);
-  EMIT(x86::Inst::kIdMovsx, TMP, x86::al);
+  EMIT(x86::Inst::kIdMovsx, TMP, x86::dl);
   EMIT_MOV(RD, TMP);
 }
 
 void TranslateLH(const jit::Translator &tr, const ir::Inst *inst) {
   TranslateLoad(tr, inst, 2);
-  EMIT(x86::Inst::kIdMovsx, TMP, x86::ax);
+  EMIT(x86::Inst::kIdMovsx, TMP, x86::dx);
   EMIT_MOV(RD, TMP);
 }
 
 void TranslateLW(const jit::Translator &tr, const ir::Inst *inst) {
   TranslateLoad(tr, inst, 4);
-  EMIT_MOV(RD, x86::eax);
+  EMIT_MOV(RD, x86::edx);
 }
 
 void TranslateLBU(const jit::Translator &tr, const ir::Inst *inst) {
   TranslateLoad(tr, inst, 1);
-  EMIT(x86::Inst::kIdMovzx, TMP, x86::al);
+  EMIT(x86::Inst::kIdMovzx, TMP, x86::dl);
   EMIT_MOV(RD, TMP);
 }
 
 void TranslateLHU(const jit::Translator &tr, const ir::Inst *inst) {
   TranslateLoad(tr, inst, 2);
-  EMIT(x86::Inst::kIdMovzx, TMP, x86::ax);
+  EMIT(x86::Inst::kIdMovzx, TMP, x86::dx);
   EMIT_MOV(RD, TMP);
 }
 
 void TranslateLWU(const jit::Translator &tr, const ir::Inst *inst) {
   TranslateLoad(tr, inst, 4);
-  EMIT_MOV(RD, x86::eax);
+  EMIT_MOV(RD, x86::edx);
 }
 
 void TranslateSB(const jit::Translator &tr, const ir::Inst *inst) { TranslateStore(tr, inst, 1); }
@@ -187,9 +186,7 @@ void TranslateSH(const jit::Translator &tr, const ir::Inst *inst) { TranslateSto
 
 void TranslateSW(const jit::Translator &tr, const ir::Inst *inst) { TranslateStore(tr, inst, 4); }
 
-void TranslateLUI(const jit::Translator &tr, const ir::Inst *inst) {
-  EMIT_MOV(RD, Imm(UIMM));
-}
+void TranslateLUI(const jit::Translator &tr, const ir::Inst *inst) { EMIT_MOV(RD, Imm(UIMM)); }
 
 void TranslateAUIPC(const jit::Translator &tr, const ir::Inst *inst) {
   EMIT_MOV(TMP, PC);
@@ -336,4 +333,17 @@ void TranslateOR(const jit::Translator &tr, const ir::Inst *inst) {
 
 void TranslateAND(const jit::Translator &tr, const ir::Inst *inst) {
   TranslateRegType(tr, inst, x86::Inst::kIdAnd);
+}
+
+// RV32M standard extension
+void TranslateMUL(const jit::Translator &tr, const ir::Inst *inst) {
+  EMIT_MOV(TMP, RS1);
+  EMIT(x86::Inst::kIdMul, RS2);
+  EMIT_MOV(RD, TMP);
+}
+
+void TranslateMULH(const jit::Translator &tr, const ir::Inst *inst) {
+  EMIT_MOV(TMP, RS1);
+  EMIT(x86::Inst::kIdMul, RS2);
+  EMIT_MOV(RD, x86::edx);
 }

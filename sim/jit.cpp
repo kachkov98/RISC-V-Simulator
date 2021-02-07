@@ -4,9 +4,10 @@
 
 using namespace asmjit;
 
-//uint32_t Load(uint32_t va, uint8_t nbytes) { return sim::State::mmu.load(va, nbytes, true); }
+// uint32_t Load(uint32_t va, uint8_t nbytes) { return sim::State::mmu.load(va, nbytes, true); }
 
-//void Store(uint32_t va, uint8_t nbytes, uint32_t data) { sim::State::mmu.store(va, nbytes, data); }
+// void Store(uint32_t va, uint8_t nbytes, uint32_t data) { sim::State::mmu.store(va, nbytes, data);
+// }
 
 namespace jit {
 
@@ -27,7 +28,7 @@ Translator::Translator(const std::vector<ir::Inst> &trace) : logger_(options::lo
 
   for (uint8_t i = 1; i < 32; ++i)
     reg_mapping_[i] = getRegMemOp(i);
-  for (auto reg : {x86::edx, x86::ecx, x86::r8d, x86::r9d, x86::r10d, x86::r11d})
+  for (auto reg : {x86::esi, x86::ecx, x86::r8d, x86::r9d, x86::r10d, x86::r11d})
     reg_pool_.push(reg);
   calcLiveness(trace);
   if (options::verbose) {
@@ -65,9 +66,9 @@ Translator::Translator(const std::vector<ir::Inst> &trace) : logger_(options::lo
 
 Operand Translator::getReg(ir::Reg reg) const { return reg ? reg_mapping_[reg] : Imm(0); }
 
-//Operand Translator::getLoadFunc() const { return Imm(reinterpret_cast<uint64_t>(&Load)); }
+// Operand Translator::getLoadFunc() const { return Imm(reinterpret_cast<uint64_t>(&Load)); }
 
-//Operand Translator::getStoreFunc() const { return Imm(reinterpret_cast<uint64_t>(&Store)); }
+// Operand Translator::getStoreFunc() const { return Imm(reinterpret_cast<uint64_t>(&Store)); }
 
 Operand Translator::getMem() const {
   size_t offset = offsetof(sim::State, mem);

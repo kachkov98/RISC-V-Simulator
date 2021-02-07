@@ -35,8 +35,7 @@ public:
 
   MMU()
       : instTLB_(options::itlb_size), dataTLB_(options::dtlb_size),
-        pmem_size_(options::mem_pages * MMU::pagesize), pmem_(new uint8_t[pmem_size_])
-  {}
+        pmem_size_(options::mem_pages * MMU::pagesize), pmem_(new uint8_t[pmem_size_]) {}
 
   MMU(const MMU &that) = delete;
   MMU(MMU &&that) = delete;
@@ -48,9 +47,7 @@ public:
     dataTLB_.clear();
   }
 
-  uint8_t *getMem() const {
-    return pmem_.get();
-  }
+  uint8_t *getMem() const { return pmem_.get(); }
 
   uint64_t getMemSize() const { return pmem_size_; }
 
@@ -108,8 +105,7 @@ public:
     return (i ? (va & 0x003fffff) | (pa & (~1ull << 22)) : (va & 0xfff) | (pa & (~1ull << 12)));
   }
 
-  template<typename T>
-  T load(uint32_t va, bool instRead = true) {
+  template <typename T> T load(uint32_t va, bool instRead = true) {
     uint64_t pa;
 
     if (satp >> 31 == 0) {
@@ -126,8 +122,7 @@ public:
     return *getMemPtr<T>(pa);
   }
 
-  template<typename T>
-  void store(uint32_t va, T data) {
+  template <typename T> void store(uint32_t va, T data) {
     uint64_t pa;
 
     if (satp >> 31 == 0) {
@@ -140,5 +135,5 @@ public:
     *getMemPtr<T>(pa) = data;
   }
 };
-}
+} // namespace sim
 #endif

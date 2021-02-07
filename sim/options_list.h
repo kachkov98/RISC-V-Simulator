@@ -6,8 +6,8 @@ OPTION_DEF(mem_pages,     size_t,   128,     "-mem-pages",     "pages num", "num
 OPTION_DEF(cache_size,    size_t,   256,     "-cache-size",    "size",      "number of saved traces in LRU cache")
 OPTION_DEF(itlb_size,     size_t,   256,     "-itlb-size",     "size",      "number of instruction TLB entries")
 OPTION_DEF(dtlb_size,     size_t,   256,     "-dtlb-size",     "size",      "number of data TLB entries")
-OPTION_DEF(jit,           bool,     false,    "-jit",           nullptr,     "enable just-in-time translation")
-OPTION_DEF(jit_threshold, uint64_t, 1000,    "-jit-threshold", "exec num",  "number of trace executions when JIT is applied")
+OPTION_DEF(jit,           bool,     false,   "-jit",           nullptr,     "enable just-in-time translation")
+OPTION_DEF(jit_threshold, uint64_t, 100,     "-jit-threshold", "exec num",  "number of trace executions when JIT is applied")
 OPTION_DEF(max_insts,     uint64_t, 2000000, "-max-insts",     "insts num", "number of instructions, after which simulator stops")
 OPTION_DEF(elf_file,      char *,   nullptr, "-elf",           "filename",  "elf file to execute")
 // clang-format on

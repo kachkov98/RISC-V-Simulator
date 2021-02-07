@@ -29,7 +29,7 @@ public:
   asmjit::x86::Assembler &getAsm() const { return x86asm_; }
   asmjit::Operand getReg(ir::Reg reg) const;
   asmjit::Operand getPc() const;
-  asmjit::Operand getTmp() const { return asmjit::x86::esi; }
+  asmjit::Operand getTmp() const { return asmjit::x86::eax; }
   asmjit::Operand getMem() const;
   asmjit::Operand getLoadFunc() const;
   asmjit::Operand getStoreFunc() const;
@@ -43,6 +43,7 @@ public:
     for (unsigned i = 1; i < 32; ++i)
       deallocateReg(i, true);
   }
+
 private:
   ExecTracePtr func_ = nullptr;
   asmjit::Label func_start_;

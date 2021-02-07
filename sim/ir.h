@@ -76,12 +76,12 @@ public:
     if (getCmd() == isa::Cmd::FENCE)
       return true;
     switch (getOpcode()) {
-      case isa::Opcode::BRANCH:
-      case isa::Opcode::JALR:
-      case isa::Opcode::JAL:
-        return true;
-      default:
-        return false;
+    case isa::Opcode::BRANCH:
+    case isa::Opcode::JALR:
+    case isa::Opcode::JAL:
+      return true;
+    default:
+      return false;
     }
   }
   void dump(FILE *f) const;

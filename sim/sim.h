@@ -82,11 +82,11 @@ struct State {
     pc = new_pc;
   }
 
-  template<typename T>
-  T read(uint32_t va) { return mmu.load<T>(va, false); }
-  template<typename T>
-  void write(uint32_t va, T data) {
-    log("\tM: 0x%08X <= 0x%08X\n", va, sizeof(T) == 4 ? data : data & ((1 << (8 * sizeof(T))) - 1));
+  template <typename T> T read(uint32_t va) { return mmu.load<T>(va, false); }
+  template <typename T> void write(uint32_t va, T data) {
+    if constexpr (std::is_integral_v<T>)
+      log("\tM: 0x%08X <= 0x%08X\n", va,
+          sizeof(T) == 4 ? data : data & ((1 << (8 * sizeof(T))) - 1));
     mmu.store(va, data);
   }
 
