@@ -147,44 +147,67 @@ void TranslateShift(const jit::Translator &tr, const ir::Inst *inst, x86::Inst::
 // end of helper functions
 
 void TranslateLB(const jit::Translator &tr, const ir::Inst *inst) {
-  TranslateLoad(tr, inst, 1);
-  EMIT(x86::Inst::kIdMovsx, TMP, x86::dl);
-  EMIT_MOV(RD, TMP);
+  EMIT_MOV(TMP, RS1);
+  EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
+  EMIT(x86::Inst::kIdMovsx, x86::edx, x86::ptr_8(x86::rax, IMM));
+  EMIT_MOV(RD, x86::edx);
 }
 
 void TranslateLH(const jit::Translator &tr, const ir::Inst *inst) {
-  TranslateLoad(tr, inst, 2);
-  EMIT(x86::Inst::kIdMovsx, TMP, x86::dx);
-  EMIT_MOV(RD, TMP);
+  EMIT_MOV(TMP, RS1);
+  EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
+  EMIT(x86::Inst::kIdMovsx, x86::edx, x86::ptr_16(x86::rax, IMM));
+  EMIT_MOV(RD, x86::edx);
 }
 
 void TranslateLW(const jit::Translator &tr, const ir::Inst *inst) {
-  TranslateLoad(tr, inst, 4);
+  EMIT_MOV(TMP, RS1);
+  EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
+  EMIT_MOV(x86::edx, x86::ptr_32(x86::rax, IMM));
   EMIT_MOV(RD, x86::edx);
 }
 
 void TranslateLBU(const jit::Translator &tr, const ir::Inst *inst) {
-  TranslateLoad(tr, inst, 1);
-  EMIT(x86::Inst::kIdMovzx, TMP, x86::dl);
-  EMIT_MOV(RD, TMP);
-}
-
-void TranslateLHU(const jit::Translator &tr, const ir::Inst *inst) {
-  TranslateLoad(tr, inst, 2);
-  EMIT(x86::Inst::kIdMovzx, TMP, x86::dx);
-  EMIT_MOV(RD, TMP);
-}
-
-void TranslateLWU(const jit::Translator &tr, const ir::Inst *inst) {
-  TranslateLoad(tr, inst, 4);
+  EMIT_MOV(TMP, RS1);
+  EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
+  EMIT(x86::Inst::kIdMovzx, x86::edx, x86::ptr_8(x86::rax, IMM));
   EMIT_MOV(RD, x86::edx);
 }
 
-void TranslateSB(const jit::Translator &tr, const ir::Inst *inst) { TranslateStore(tr, inst, 1); }
+void TranslateLHU(const jit::Translator &tr, const ir::Inst *inst) {
+  EMIT_MOV(TMP, RS1);
+  EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
+  EMIT(x86::Inst::kIdMovzx, x86::edx, x86::ptr_16(x86::rax, IMM));
+  EMIT_MOV(RD, x86::edx);
+}
 
-void TranslateSH(const jit::Translator &tr, const ir::Inst *inst) { TranslateStore(tr, inst, 2); }
+void TranslateLWU(const jit::Translator &tr, const ir::Inst *inst) {
+  EMIT_MOV(TMP, RS1);
+  EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
+  EMIT_MOV(x86::edx, x86::ptr_32(x86::rax, IMM));
+  EMIT_MOV(RD, x86::edx);
+}
 
-void TranslateSW(const jit::Translator &tr, const ir::Inst *inst) { TranslateStore(tr, inst, 4); }
+void TranslateSB(const jit::Translator &tr, const ir::Inst *inst) {
+  EMIT_MOV(TMP, RS1);
+  EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
+  EMIT_MOV(x86::edx, RS2);
+  EMIT_MOV(x86::ptr_8(x86::rax, IMM), x86::dl);
+}
+
+void TranslateSH(const jit::Translator &tr, const ir::Inst *inst) {
+  EMIT_MOV(TMP, RS1);
+  EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
+  EMIT_MOV(x86::edx, RS2);
+  EMIT_MOV(x86::ptr_16(x86::rax, IMM), x86::dx);
+}
+
+void TranslateSW(const jit::Translator &tr, const ir::Inst *inst) {
+  EMIT_MOV(TMP, RS1);
+  EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
+  EMIT_MOV(x86::edx, RS2);
+  EMIT_MOV(x86::ptr_32(x86::rax, IMM), x86::edx);
+}
 
 void TranslateLUI(const jit::Translator &tr, const ir::Inst *inst) { EMIT_MOV(RD, Imm(UIMM)); }
 
