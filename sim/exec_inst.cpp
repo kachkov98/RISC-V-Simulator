@@ -46,53 +46,53 @@ void ExecFENCE(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *s
 }
 
 void ExecLB(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state) {
-  uint32_t val = state->read(RS1 + IMM, 1);
+  uint32_t val = state->read<uint8_t>(RS1 + IMM);
   RD(SIGN_EXTEND(val, 8));
   NEXT_INST();
 }
 
 void ExecLH(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state) {
-  uint32_t val = state->read(RS1 + IMM, 2);
+  uint32_t val = state->read<uint16_t>(RS1 + IMM);
   RD(SIGN_EXTEND(val, 16));
   NEXT_INST();
 }
 
 void ExecLW(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state) {
-  uint32_t val = state->read(RS1 + IMM, 4);
+  uint32_t val = state->read<uint32_t>(RS1 + IMM);
   RD(SIGN_EXTEND(val, 32));
   NEXT_INST();
 }
 
 void ExecLBU(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state) {
-  uint32_t val = state->read(RS1 + IMM, 1);
+  uint32_t val = state->read<uint8_t>(RS1 + IMM);
   RD(val);
   NEXT_INST();
 }
 
 void ExecLHU(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state) {
-  uint32_t val = state->read(RS1 + IMM, 2);
+  uint32_t val = state->read<uint8_t>(RS1 + IMM);
   RD(val);
   NEXT_INST();
 }
 
 void ExecLWU(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state) {
-  uint32_t val = state->read(RS1 + IMM, 4);
+  uint32_t val = state->read<uint32_t>(RS1 + IMM);
   RD(val);
   NEXT_INST();
 }
 
 void ExecSB(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state) {
-  state->write(RS1 + IMM, 1, RS2);
+  state->write<uint8_t>(RS1 + IMM, RS2);
   NEXT_INST();
 }
 
 void ExecSH(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state) {
-  state->write(RS1 + IMM, 2, RS2);
+  state->write<uint16_t>(RS1 + IMM, RS2);
   NEXT_INST();
 }
 
 void ExecSW(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state) {
-  state->write(RS1 + IMM, 4, RS2);
+  state->write<uint32_t>(RS1 + IMM, RS2);
   NEXT_INST();
 }
 

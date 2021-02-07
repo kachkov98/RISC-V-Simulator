@@ -82,13 +82,15 @@ struct State {
     pc = new_pc;
   }
 
-  uint32_t read(uint32_t va, uint8_t nbytes) { return mmu.load(va, nbytes, false); }
-  void write(uint32_t va, uint8_t nbytes, uint32_t data) {
-    log("\tM: 0x%08X <= 0x%08X\n", va, nbytes == 4 ? data : data & ((1 << (8 * nbytes)) - 1));
-    mmu.store(va, nbytes, data);
+  template<typename T>
+  T read(uint32_t va) { return mmu.load<T>(va, false); }
+  template<typename T>
+  void write(uint32_t va, T data) {
+    log("\tM: 0x%08X <= 0x%08X\n", va, sizeof(T) == 4 ? data : data & ((1 << (8 * sizeof(T))) - 1));
+    mmu.store(va, data);
   }
 
-  uint32_t getCmd(uint32_t va) { return mmu.load(va, sizeof(va)); }
+  uint32_t getCmd(uint32_t va) { return mmu.load<uint32_t>(va, true); }
 
   static void flush() {
     mmu.flush();

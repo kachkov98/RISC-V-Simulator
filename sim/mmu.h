@@ -108,7 +108,8 @@ public:
     return (i ? (va & 0x003fffff) | (pa & (~1ull << 22)) : (va & 0xfff) | (pa & (~1ull << 12)));
   }
 
-  uint32_t load(uint32_t va, uint8_t nbytes, bool instRead = true) {
+  template<typename T>
+  T load(uint32_t va, bool instRead = true) {
     uint64_t pa;
 
     if (satp >> 31 == 0) {
@@ -122,10 +123,11 @@ public:
       else
         ++(res.second ? stats::dtlb_load_misses : stats::dtlb_load_hits);
     }
-    return (*getMemPtr<uint32_t>(pa)) & (nbytes == 4 ? 0xffffffff : ((1 << (8 * nbytes)) - 1));
+    return *getMemPtr<T>(pa);
   }
 
-  void store(uint32_t va, uint8_t nbytes, uint32_t data) {
+  template<typename T>
+  void store(uint32_t va, T data) {
     uint64_t pa;
 
     if (satp >> 31 == 0) {
@@ -135,7 +137,7 @@ public:
       pa = res.first;
       ++(res.second ? stats::dtlb_store_misses : stats::dtlb_store_hits);
     }
-    *getMemPtr<uint32_t>(pa) = data & (nbytes == 4 ? 0xffffffff : ((1 << (8 * nbytes)) - 1));
+    *getMemPtr<T>(pa) = data;
   }
 };
 }

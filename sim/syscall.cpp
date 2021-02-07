@@ -15,7 +15,7 @@ void ExecRead(sim::State *state) {
   for (uint32_t i = 0; i < a2; ++i) {
     int res = fgetc(stdin);
     if (res != EOF)
-      state->write(a1 + i, 1, res);
+      state->write<char>(a1 + i, res);
     else {
       state->setReg(isa::Regs::a0, i);
       return;
@@ -29,14 +29,12 @@ void ExecWrite(sim::State *state) {
   const uint32_t a1 = state->getReg(isa::Regs::a1);
   const uint32_t a2 = state->getReg(isa::Regs::a2);
   for (uint32_t i = 0; i < a2; ++i)
-    fputc(state->read(a1 + i, 1), stdout);
+    fputc(state->read<char>(a1 + i), stdout);
   state->setReg(isa::Regs::a0, a2);
 }
 
 void ExecFstat(sim::State *state) {
   printf("Fstat syscall!\n");
-  printf("Fd = %d\n", state->getReg(isa::Regs::a0));
-  state->write(state->getReg(isa::Regs::a1) + 8, 4, 0x0020000);
   state->setReg(isa::Regs::a0, 0);
 }
 

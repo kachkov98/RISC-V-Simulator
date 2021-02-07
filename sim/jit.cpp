@@ -4,9 +4,9 @@
 
 using namespace asmjit;
 
-uint32_t Load(uint32_t va, uint8_t nbytes) { return sim::State::mmu.load(va, nbytes, true); }
+//uint32_t Load(uint32_t va, uint8_t nbytes) { return sim::State::mmu.load(va, nbytes, true); }
 
-void Store(uint32_t va, uint8_t nbytes, uint32_t data) { sim::State::mmu.store(va, nbytes, data); }
+//void Store(uint32_t va, uint8_t nbytes, uint32_t data) { sim::State::mmu.store(va, nbytes, data); }
 
 namespace jit {
 
@@ -65,9 +65,9 @@ Translator::Translator(const std::vector<ir::Inst> &trace) : logger_(options::lo
 
 Operand Translator::getReg(ir::Reg reg) const { return reg ? reg_mapping_[reg] : Imm(0); }
 
-Operand Translator::getLoadFunc() const { return Imm(reinterpret_cast<uint64_t>(&Load)); }
+//Operand Translator::getLoadFunc() const { return Imm(reinterpret_cast<uint64_t>(&Load)); }
 
-Operand Translator::getStoreFunc() const { return Imm(reinterpret_cast<uint64_t>(&Store)); }
+//Operand Translator::getStoreFunc() const { return Imm(reinterpret_cast<uint64_t>(&Store)); }
 
 Operand Translator::getMem() const {
   size_t offset = offsetof(sim::State, mem);

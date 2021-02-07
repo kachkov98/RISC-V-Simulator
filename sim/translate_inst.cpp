@@ -40,7 +40,12 @@ void TranslateLoad(const jit::Translator &tr, const ir::Inst *inst, uint8_t num_
 #else
   EMIT_MOV(TMP, RS1);
   EMIT(x86::Inst::kIdAdd, x86::rsi, MEM);
-  EMIT_MOV(x86::eax, x86::ptr_32(x86::rsi, IMM));
+  if (num_bytes == 1)
+    EMIT_MOV(x86::al, x86::ptr_8(x86::rsi, IMM));
+  else if (num_bytes == 2)
+    EMIT_MOV(x86::ax, x86::ptr_16(x86::rsi, IMM));
+  else
+    EMIT_MOV(x86::eax, x86::ptr_32(x86::rsi, IMM));
 #endif
 }
 
@@ -161,12 +166,14 @@ void TranslateLW(const jit::Translator &tr, const ir::Inst *inst) {
 
 void TranslateLBU(const jit::Translator &tr, const ir::Inst *inst) {
   TranslateLoad(tr, inst, 1);
-  EMIT_MOV(RD, x86::eax);
+  EMIT(x86::Inst::kIdMovzx, TMP, x86::al);
+  EMIT_MOV(RD, TMP);
 }
 
 void TranslateLHU(const jit::Translator &tr, const ir::Inst *inst) {
   TranslateLoad(tr, inst, 2);
-  EMIT_MOV(RD, x86::eax);
+  EMIT(x86::Inst::kIdMovzx, TMP, x86::ax);
+  EMIT_MOV(RD, TMP);
 }
 
 void TranslateLWU(const jit::Translator &tr, const ir::Inst *inst) {
