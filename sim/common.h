@@ -2,11 +2,11 @@
 #define COMMON_H
 
 #include "options.h"
+#include "robin_hood.h"
 #include <chrono>
 #include <exception>
 #include <functional>
 #include <list>
-#include <unordered_map>
 
 // Get array size, helpful for working with opcode_desc, cmd_desc, etc.
 template <typename T, size_t N> constexpr size_t ArrSize(T (&)[N]) { return N; }
@@ -81,7 +81,7 @@ public:
 
 private:
   std::list<key_val_t> entries_;
-  std::unordered_map<KeyType, list_iter_t> links_;
+  robin_hood::unordered_map<KeyType, list_iter_t> links_;
   size_t max_size_, cur_size_;
 };
 
