@@ -16,14 +16,14 @@ Translator::Translator(const std::vector<ir::Inst> &trace) : logger_(options::lo
     if (options::jit_log)
       inst.dump(options::log);
     if (!inst.isTranslationSupported()) {
-      log("Unsupported instruction!\n");
+      fprintf(options::log, "Unsupported instruction!\n");
       return;
     }
   }
   if (options::jit_log)
     code_.setLogger(&logger_);
 
-  code_.init(Runtime::get().codeInfo());
+  code_.init(Runtime::get().environment());
   code_.attach(&x86asm_);
 
   for (uint8_t i = 1; i < 32; ++i)
@@ -32,9 +32,9 @@ Translator::Translator(const std::vector<ir::Inst> &trace) : logger_(options::lo
     reg_pool_.push(reg);
   calcLiveness(trace);
   if (options::jit_log) {
-    log("Liveness:\n");
+    fprintf(options::log, "Liveness:\n");
     for (const auto &info : liveness_)
-      log("%s\n", info.to_string().c_str());
+      fprintf(options::log, "%s\n", info.to_string().c_str());
   }
 
   func_start_ = getAsm().newLabel();

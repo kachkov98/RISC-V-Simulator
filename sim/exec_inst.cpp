@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <cstdio>
 
-#define SIGN_EXTEND(val, bitsUsed) (static_cast<int32_t>(static_cast<int##bitsUsed##_t>(val)))
 #define URS1 (state->getReg(cur_inst->getRs1()))
 #define RS1 ((int32_t)state->getReg(cur_inst->getRs1()))
 #define URS2 (state->getReg(cur_inst->getRs2()))
@@ -29,7 +28,7 @@
   }
 
 void ExecDummy(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state) {
-  log("This instruction is not implemented yet\n");
+  fprintf(options::log, "This instruction is not implemented yet\n");
   NEXT_INST();
 }
 
@@ -46,38 +45,32 @@ void ExecFENCE(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *s
 }
 
 void ExecLB(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state) {
-  uint32_t val = state->read<uint8_t>(RS1 + IMM);
-  RD(SIGN_EXTEND(val, 8));
+  RD(state->read<int8_t>(RS1 + IMM));
   NEXT_INST();
 }
 
 void ExecLH(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state) {
-  uint32_t val = state->read<uint16_t>(RS1 + IMM);
-  RD(SIGN_EXTEND(val, 16));
+  RD(state->read<int16_t>(RS1 + IMM));
   NEXT_INST();
 }
 
 void ExecLW(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state) {
-  uint32_t val = state->read<uint32_t>(RS1 + IMM);
-  RD(SIGN_EXTEND(val, 32));
+  RD(state->read<int32_t>(RS1 + IMM));
   NEXT_INST();
 }
 
 void ExecLBU(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state) {
-  uint32_t val = state->read<uint8_t>(RS1 + IMM);
-  RD(val);
+  RD(state->read<uint8_t>(RS1 + IMM));
   NEXT_INST();
 }
 
 void ExecLHU(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state) {
-  uint32_t val = state->read<uint8_t>(RS1 + IMM);
-  RD(val);
+  RD(state->read<uint16_t>(RS1 + IMM));
   NEXT_INST();
 }
 
 void ExecLWU(const ir::Inst *fst_inst, const ir::Inst *cur_inst, sim::State *state) {
-  uint32_t val = state->read<uint32_t>(RS1 + IMM);
-  RD(val);
+  RD(state->read<uint32_t>(RS1 + IMM));
   NEXT_INST();
 }
 

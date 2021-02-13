@@ -50,7 +50,7 @@ public:
   list_const_iter_t begin() const { return entries_.cbegin(); }
   list_const_iter_t end() const { return entries_.cend(); }
   template <typename... ValArgs> auto insert(KeyType key, ValArgs &&...val_args) {
-    typename std::unordered_map<KeyType, list_iter_t>::iterator it = links_.find(key);
+    auto it = links_.find(key);
     if (it == links_.end()) {
       // not in cache
       if (cur_size_ < max_size_) {
@@ -84,9 +84,5 @@ private:
   std::unordered_map<KeyType, list_iter_t> links_;
   size_t max_size_, cur_size_;
 };
-
-template <typename... Args> void log(const char *fmt, Args &&...args) {
-  fprintf(options::log, fmt, std::forward<Args>(args)...); // NOLINT
-}
 
 #endif

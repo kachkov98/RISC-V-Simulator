@@ -42,6 +42,10 @@ public:
 
   ~MMU() {}
 
+  static bool isVirtualAddressing() {
+    return satp >> 31;
+  }
+
   void flush() {
     instTLB_.clear();
     dataTLB_.clear();
@@ -58,7 +62,7 @@ public:
   }
 
   uint64_t translate(uint32_t va, AccessType acc) const {
-    if (satp >> 31 == 0) {
+    if (!isVirtualAddressing()) {
       return va;
     }
     uint64_t table_pa = (satp & 0x3fffff) * pagesize;
@@ -108,9 +112,7 @@ public:
   template <typename T> T load(uint32_t va, bool instRead = true) {
     uint64_t pa;
 
-    if (satp >> 31 == 0) {
-      pa = va;
-    } else {
+    if (isVirtualAddressing()) {
       auto res = instRead ? instTLB_.insert(va, *this, va, MMU::AccessType::EXEC)
                           : dataTLB_.insert(va, *this, va, MMU::AccessType::READ);
       pa = res.first;
@@ -119,19 +121,21 @@ public:
       else
         ++(res.second ? stats::dtlb_load_misses : stats::dtlb_load_hits);
     }
+    else
+      pa = va;
     return *getMemPtr<T>(pa);
   }
 
   template <typename T> void store(uint32_t va, T data) {
     uint64_t pa;
 
-    if (satp >> 31 == 0) {
-      pa = va;
-    } else {
+    if (isVirtualAddressing()) {
       auto res = dataTLB_.insert(va, *this, va, MMU::AccessType::WRITE);
       pa = res.first;
       ++(res.second ? stats::dtlb_store_misses : stats::dtlb_store_hits);
     }
+    else
+      pa = va;
     *getMemPtr<T>(pa) = data;
   }
 };

@@ -6,13 +6,13 @@
 namespace syscall {
 void ExecClose(sim::State *state) {
   if (options::verbose)
-    log("close syscall!\n");
+    fprintf(options::log, "close syscall!\n");
   state->setReg(isa::Regs::a0, 0);
 }
 
 void ExecRead(sim::State *state) {
   if (options::verbose)
-    log("read syscall!\n");
+    fprintf(options::log, "read syscall!\n");
   const uint32_t a0 = state->getReg(isa::Regs::a0);
   const uint32_t a1 = state->getReg(isa::Regs::a1);
   const uint32_t a2 = state->getReg(isa::Regs::a2);
@@ -30,7 +30,7 @@ void ExecRead(sim::State *state) {
 
 void ExecWrite(sim::State *state) {
   if (options::verbose)
-    log("write syscall!\n");
+    fprintf(options::log, "write syscall!\n");
   const uint32_t a0 = state->getReg(isa::Regs::a0);
   const uint32_t a1 = state->getReg(isa::Regs::a1);
   const uint32_t a2 = state->getReg(isa::Regs::a2);
@@ -41,19 +41,19 @@ void ExecWrite(sim::State *state) {
 
 void ExecFstat(sim::State *state) {
   if (options::verbose)
-    log("fstat syscall!\n");
+    fprintf(options::log, "fstat syscall!\n");
   state->setReg(isa::Regs::a0, 0);
 }
 
 void ExecExit([[maybe_unused]] sim::State *state) {
   if (options::verbose)
-    log("close syscall!\n");
+    fprintf(options::log, "close syscall!\n");
   throw SimException("Successfully finished!\n");
 }
 
 void ExecGetTimeOfDay(sim::State *state) {
   if (options::verbose)
-    log("gettimeofday syscall!\n");
+    fprintf(options::log, "gettimeofday syscall!\n");
   const uint32_t a0 = state->getReg(isa::Regs::a0);
   const uint32_t a1 = state->getReg(isa::Regs::a1);
   struct timeval tv;
@@ -65,7 +65,7 @@ void ExecGetTimeOfDay(sim::State *state) {
 
 void ExecBrk(sim::State *state) {
   if (options::verbose)
-    log("brk syscall!\n");
+    fprintf(options::log, "brk syscall!\n");
   state->setReg(isa::Regs::a0, 0);
 }
 
@@ -93,7 +93,8 @@ void ExecSysCall(sim::State *state, SysCall value) {
     ExecBrk(state);
     break;
   default:
-    printf("Unssupported syscall %u\n", static_cast<uint32_t>(value));
+    if (options::verbose)
+      fprintf(options::log, "Unssupported syscall %u\n", static_cast<uint32_t>(value));
   }
 }
 } // namespace syscall

@@ -12,14 +12,14 @@ uint32_t SignExtend(uint32_t imm, uint8_t n) {
 
 Decoder::Decoder() {
   if (options::verbose)
-    log("Decoder initialization started\n");
+    fprintf(options::log, "Decoder initialization started\n");
   // setup opc_to_fmt_ table
   opc_to_fmt_.fill(isa::CmdFormat::UNDEFINED);
   for (size_t i = 0; i < isa::getOpcodesNum(); ++i) {
     const isa::OpcodeDesc &op_desc = isa::getOpcodeDesc(i);
     assert(op_desc.opcode < 32);
     if (options::verbose && opc_to_fmt_[op_desc.opcode] != isa::CmdFormat::UNDEFINED)
-      log("Warning: ISA opcode description has same opcodes\n");
+      fprintf(options::log, "Warning: ISA opcode description has same opcodes\n");
     opc_to_fmt_[op_desc.opcode] = op_desc.format;
   }
   // setup opc_funct3_[funct7_]to_cmd_ tables
@@ -42,18 +42,18 @@ Decoder::Decoder() {
       }
       if (options::verbose &&
           funct7_to_cmd_[opc_funct3_to_cmd_[opc_funct3]][cmd_desc.funct7] != isa::Cmd::UNDEFINED)
-        log("Warning: cmd %s has opcode, funct3, funct7 collision\n", cmd_desc.name);
+        fprintf(options::log, "Warning: cmd %s has opcode, funct3, funct7 collision\n", cmd_desc.name);
       funct7_to_cmd_[opc_funct3_to_cmd_[opc_funct3]][cmd_desc.funct7] = static_cast<isa::Cmd>(i);
     } else {
       if (options::verbose &&
           opc_funct3_to_cmd_[opc_funct3] != static_cast<uint8_t>(isa::Cmd::UNDEFINED))
-        log("Warning: cmd %s has opcode, funct3 collision\n", cmd_desc.name);
+        fprintf(options::log, "Warning: cmd %s has opcode, funct3 collision\n", cmd_desc.name);
       opc_funct3_to_cmd_[opc_funct3] = i;
     }
   }
   funct7_to_cmd_.shrink_to_fit();
   if (options::verbose)
-    log("Decoder initialization finished\n");
+    fprintf(options::log, "Decoder initialization finished\n");
 }
 
 isa::Cmd Decoder::getCmd(uint8_t opcode, uint8_t funct3) const {

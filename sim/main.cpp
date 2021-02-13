@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
     std::vector<uint32_t> seg_va;
     uint32_t pc = 0;
     if (!er.load(cmds, seg_va, pc))
-      log("Can't load segment\n");
+      fprintf(options::log, "Can't load segment\n");
 
     sim::Sim simulator(cmds, seg_va, pc);
     simulator.execute();

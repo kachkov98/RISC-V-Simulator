@@ -53,21 +53,21 @@ Trace::Trace(const Decoder &decoder, State &state) {
 void Trace::execute(State *state) const {
   if (options::jit && is_eligible_ && !exec_trace_ && options::jit_threshold == exec_num_++) {
     if (options::execution_log)
-      log("Attempt to translate trace...\n");
+      fprintf(options::log, "Attempt to translate trace...\n");
     exec_trace_ = ExecTraceType(jit::Translator(trace_).getFunc());
     if (!exec_trace_) {
       is_eligible_ = false;
       ++stats::jit_failed_translations;
       if (options::execution_log)
-        log("Fail\n");
+        fprintf(options::log, "Fail\n");
     } else {
       ++stats::jit_finished_translations;
       if (options::execution_log)
-        log("Success\n");
+        fprintf(options::log, "Success\n");
     }
   }
   if (options::execution_log)
-    log("Executing trace...\n");
+    fprintf(options::log, "Executing trace...\n");
   if (exec_trace_) {
     (*exec_trace_)(state);
     ++stats::translated_executions;
@@ -117,8 +117,8 @@ void Sim::execute() {
   }
   uint64_t time = timer.getMicroseconds();
   state_.dump(options::log);
-  log("Some statistics:\n");
-  log("Insts num: %lu, Time: %lu ms, MIPS: %.3lf\n", state_.executed_insts, time / 1000,
+  fprintf(options::log, "Some statistics:\n");
+  fprintf(options::log, "Insts num: %lu, Time: %lu ms, MIPS: %.3lf\n", state_.executed_insts, time / 1000,
       (double)state_.executed_insts / time);
   stats::PrintStatistics(options::log);
 }

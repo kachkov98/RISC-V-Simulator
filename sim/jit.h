@@ -31,8 +31,8 @@ public:
   asmjit::Operand getPc() const;
   asmjit::Operand getTmp() const { return asmjit::x86::eax; }
   asmjit::Operand getMem() const;
-  asmjit::Operand getLoadFunc() const;
-  asmjit::Operand getStoreFunc() const;
+  //asmjit::Operand getLoadFunc() const;
+  //asmjit::Operand getStoreFunc() const;
   asmjit::Label getFunctionStart() const { return func_start_; };
   size_t getOffset() const { return cur_inst_ * 4; }
 

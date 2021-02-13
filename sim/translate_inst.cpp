@@ -1,5 +1,6 @@
 #include "translate_inst.h"
 #include "jit.h"
+#include "sim.h"
 
 #define EMIT(...) (tr.getAsm().emit(__VA_ARGS__))
 #define EMIT_MOV(DST, SRC) (TranslateMove(tr, (DST), (SRC)))
@@ -26,52 +27,23 @@ void TranslateMove(const jit::Translator &tr, const Operand &dst, const Operand 
     EMIT(x86::Inst::kIdMov, dst, src);
 }
 
-void TranslateLoad(const jit::Translator &tr, const ir::Inst *inst, uint8_t num_bytes) {
-#if 0
+template <typename T>
+void TranslateMMULoad(const jit::Translator &tr, const ir::Inst *inst) {
     tr.saveAllRegs();
-    EMIT(x86::Inst::kIdMov, x86::esi, RS1);
-    EMIT(x86::Inst::kIdAdd, x86::esi, Imm(IMM));
-    EMIT(x86::Inst::kIdMov, x86::edx, Imm(num_bytes));
-    EMIT(x86::Inst::kIdPush, x86::rdi);
-    EMIT(x86::Inst::kIdLea, x86::rdi, tr.getMMU());
-    EMIT(x86::Inst::kIdCall, tr.getLoadFunc());
-    EMIT(x86::Inst::kIdPop, x86::rdi);
+    EMIT(x86::Inst::kIdMov, x86::edi, RS1);
+    EMIT(x86::Inst::kIdAdd, x86::edi, Imm(IMM));
+    EMIT(x86::Inst::kIdCall, reinterpret_cast<uint64_t>(&sim::State::read<T>));
     tr.restoreAllRegs();
-#else
-  EMIT_MOV(TMP, RS1);
-  EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
-  if (num_bytes == 1)
-    EMIT_MOV(x86::dl, x86::ptr_8(x86::rax, IMM));
-  else if (num_bytes == 2)
-    EMIT_MOV(x86::dx, x86::ptr_16(x86::rax, IMM));
-  else
-    EMIT_MOV(x86::edx, x86::ptr_32(x86::rax, IMM));
-#endif
 }
 
-void TranslateStore(const jit::Translator &tr, const ir::Inst *inst, uint8_t num_bytes) {
-#if 0
+template <typename T>
+void TranslateMMUStore(const jit::Translator &tr, const ir::Inst *inst) {
     tr.saveAllRegs();
-    EMIT(x86::Inst::kIdMov, x86::esi, RS1);
-    EMIT(x86::Inst::kIdAdd, x86::esi, Imm(IMM));
-    EMIT(x86::Inst::kIdMov, x86::edx, Imm(num_bytes));
-    EMIT(x86::Inst::kIdMov, x86::ecx, RS2);
-    EMIT(x86::Inst::kIdPush, x86::rdi);
-    EMIT(x86::Inst::kIdLea, x86::rdi, tr.getMMU());
-    EMIT(x86::Inst::kIdCall, tr.getStoreFunc());
-    EMIT(x86::Inst::kIdPop, x86::rdi);
+    EMIT(x86::Inst::kIdMov, x86::edi, RS1);
+    EMIT(x86::Inst::kIdAdd, x86::edi, Imm(IMM));
+    EMIT(x86::Inst::kIdMov, x86::esi, RS2);
+    EMIT(x86::Inst::kIdCall, reinterpret_cast<uint64_t>(&sim::State::write<T>));
     tr.restoreAllRegs();
-#else
-  EMIT_MOV(TMP, RS1);
-  EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
-  EMIT_MOV(x86::edx, RS2);
-  if (num_bytes == 1)
-    EMIT_MOV(x86::ptr_8(x86::rax, IMM), x86::dl);
-  else if (num_bytes == 2)
-    EMIT_MOV(x86::ptr_16(x86::rax, IMM), x86::dx);
-  else
-    EMIT_MOV(x86::ptr_32(x86::rax, IMM), x86::edx);
-#endif
 }
 
 void TranslateCondBranch(const jit::Translator &tr, const ir::Inst *inst, x86::Inst::Id cmp_inst) {
@@ -114,15 +86,6 @@ void TranslateImmType(const jit::Translator &tr, const ir::Inst *inst, x86::Inst
 void TranslateRegType(const jit::Translator &tr, const ir::Inst *inst, x86::Inst::Id opcode_inst) {
   if (!inst->getRd())
     return;
-#if 0
-    Operand DST = RD.isMem() ? TMP : RD;
-    if (DST != RS1)
-        EMIT(x86::Inst::kIdMov, DST, RS1);
-    if (opcode_inst != x86::Inst::kIdMov)
-        EMIT(opcode_inst, DST, RS2);
-    if (RD.isMem())
-        EMIT(x86::Inst::kIdMov, RD, TMP);
-#endif
   EMIT_MOV(TMP, RS1);
   if (opcode_inst != x86::Inst::kIdMov)
     EMIT(opcode_inst, TMP, RS2);
@@ -147,6 +110,11 @@ void TranslateShift(const jit::Translator &tr, const ir::Inst *inst, x86::Inst::
 // end of helper functions
 
 void TranslateLB(const jit::Translator &tr, const ir::Inst *inst) {
+  if (sim::MMU::isVirtualAddressing()) {
+    TranslateMMULoad<int8_t>(tr, inst);
+    EMIT(x86::Inst::kIdMovsx, RD, x86::al);
+    return;
+  }
   EMIT_MOV(TMP, RS1);
   EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
   EMIT(x86::Inst::kIdMovsx, x86::edx, x86::ptr_8(x86::rax, IMM));
@@ -154,6 +122,11 @@ void TranslateLB(const jit::Translator &tr, const ir::Inst *inst) {
 }
 
 void TranslateLH(const jit::Translator &tr, const ir::Inst *inst) {
+  if (sim::MMU::isVirtualAddressing()) {
+    TranslateMMULoad<int16_t>(tr, inst);
+    EMIT(x86::Inst::kIdMovsx, RD, x86::ax);
+    return;
+  }
   EMIT_MOV(TMP, RS1);
   EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
   EMIT(x86::Inst::kIdMovsx, x86::edx, x86::ptr_16(x86::rax, IMM));
@@ -161,6 +134,11 @@ void TranslateLH(const jit::Translator &tr, const ir::Inst *inst) {
 }
 
 void TranslateLW(const jit::Translator &tr, const ir::Inst *inst) {
+  if (sim::MMU::isVirtualAddressing()) {
+    TranslateMMULoad<int32_t>(tr, inst);
+    EMIT_MOV(RD, x86::eax);
+    return;
+  }
   EMIT_MOV(TMP, RS1);
   EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
   EMIT_MOV(x86::edx, x86::ptr_32(x86::rax, IMM));
@@ -168,6 +146,11 @@ void TranslateLW(const jit::Translator &tr, const ir::Inst *inst) {
 }
 
 void TranslateLBU(const jit::Translator &tr, const ir::Inst *inst) {
+  if (sim::MMU::isVirtualAddressing()) {
+    TranslateMMULoad<uint8_t>(tr, inst);
+    EMIT_MOV(RD, x86::al);
+    return;
+  }
   EMIT_MOV(TMP, RS1);
   EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
   EMIT(x86::Inst::kIdMovzx, x86::edx, x86::ptr_8(x86::rax, IMM));
@@ -175,6 +158,11 @@ void TranslateLBU(const jit::Translator &tr, const ir::Inst *inst) {
 }
 
 void TranslateLHU(const jit::Translator &tr, const ir::Inst *inst) {
+  if (sim::MMU::isVirtualAddressing()) {
+    TranslateMMULoad<uint16_t>(tr, inst);
+    EMIT_MOV(RD, x86::ax);
+    return;
+  }
   EMIT_MOV(TMP, RS1);
   EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
   EMIT(x86::Inst::kIdMovzx, x86::edx, x86::ptr_16(x86::rax, IMM));
@@ -182,6 +170,11 @@ void TranslateLHU(const jit::Translator &tr, const ir::Inst *inst) {
 }
 
 void TranslateLWU(const jit::Translator &tr, const ir::Inst *inst) {
+  if (sim::MMU::isVirtualAddressing()) {
+    TranslateMMULoad<uint32_t>(tr, inst);
+    EMIT_MOV(RD, x86::eax);
+    return;
+  }
   EMIT_MOV(TMP, RS1);
   EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
   EMIT_MOV(x86::edx, x86::ptr_32(x86::rax, IMM));
@@ -189,6 +182,10 @@ void TranslateLWU(const jit::Translator &tr, const ir::Inst *inst) {
 }
 
 void TranslateSB(const jit::Translator &tr, const ir::Inst *inst) {
+  if (sim::MMU::isVirtualAddressing()) {
+    TranslateMMUStore<uint8_t>(tr, inst);
+    return;
+  }
   EMIT_MOV(TMP, RS1);
   EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
   EMIT_MOV(x86::edx, RS2);
@@ -196,6 +193,10 @@ void TranslateSB(const jit::Translator &tr, const ir::Inst *inst) {
 }
 
 void TranslateSH(const jit::Translator &tr, const ir::Inst *inst) {
+  if (sim::MMU::isVirtualAddressing()) {
+    TranslateMMUStore<uint16_t>(tr, inst);
+    return;
+  }
   EMIT_MOV(TMP, RS1);
   EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
   EMIT_MOV(x86::edx, RS2);
@@ -203,6 +204,10 @@ void TranslateSH(const jit::Translator &tr, const ir::Inst *inst) {
 }
 
 void TranslateSW(const jit::Translator &tr, const ir::Inst *inst) {
+  if (sim::MMU::isVirtualAddressing()) {
+    TranslateMMUStore<uint32_t>(tr, inst);
+    return;
+  }
   EMIT_MOV(TMP, RS1);
   EMIT(x86::Inst::kIdAdd, x86::rax, MEM);
   EMIT_MOV(x86::edx, RS2);

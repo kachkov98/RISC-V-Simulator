@@ -4,7 +4,7 @@ namespace elf {
 
 template <typename... Args>
 static inline void print_and_exit(const char *msg, const Args &...args) {
-  log(msg, args...);
+  fprintf(options::log, msg, args...);
   throw std::runtime_error("Elf reader failed");
 }
 
