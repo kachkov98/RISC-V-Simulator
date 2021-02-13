@@ -13,14 +13,14 @@ namespace jit {
 
 Translator::Translator(const std::vector<ir::Inst> &trace) : logger_(options::log) {
   for (const ir::Inst &inst : trace) {
-    if (options::verbose)
+    if (options::jit_log)
       inst.dump(options::log);
     if (!inst.isTranslationSupported()) {
       log("Unsupported instruction!\n");
       return;
     }
   }
-  if (options::verbose)
+  if (options::jit_log)
     code_.setLogger(&logger_);
 
   code_.init(Runtime::get().codeInfo());
@@ -31,7 +31,7 @@ Translator::Translator(const std::vector<ir::Inst> &trace) : logger_(options::lo
   for (auto reg : {x86::esi, x86::ecx, x86::r8d, x86::r9d, x86::r10d, x86::r11d})
     reg_pool_.push(reg);
   calcLiveness(trace);
-  if (options::verbose) {
+  if (options::jit_log) {
     log("Liveness:\n");
     for (const auto &info : liveness_)
       log("%s\n", info.to_string().c_str());

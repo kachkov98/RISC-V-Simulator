@@ -67,10 +67,10 @@ struct State {
   void setReg(ir::Reg reg, uint32_t val) {
     assert(reg < 32 && "Invalid register number");
     if (reg) {
-      if (options::verbose) {
-        fprintf(options::log, "\t");
+      if (options::execution_log) {
+        log("\t");
         reg.dump(options::log);
-        fprintf(options::log, ": 0x%08X => 0x%08X\n", regs[reg], val);
+        log(": 0x%08X => 0x%08X\n", regs[reg], val);
       }
       regs[reg] = val;
     }
@@ -78,15 +78,17 @@ struct State {
 
   uint32_t getPC() const { return pc; }
   void setPC(uint32_t new_pc) {
-    log("\tPC: 0x%08X => 0x%08X\n", pc, new_pc);
+    if (options::execution_log)
+      log("\tPC: 0x%08X => 0x%08X\n", pc, new_pc);
     pc = new_pc;
   }
 
   template <typename T> T read(uint32_t va) { return mmu.load<T>(va, false); }
   template <typename T> void write(uint32_t va, T data) {
     if constexpr (std::is_integral_v<T>)
-      log("\tM: 0x%08X <= 0x%08X\n", va,
-          sizeof(T) == 4 ? data : data & ((1 << (8 * sizeof(T))) - 1));
+      if (options::execution_log)
+        log("\tM: 0x%08X <= 0x%08X\n", va,
+            sizeof(T) == 4 ? data : data & ((1 << (8 * sizeof(T))) - 1));
     mmu.store(va, data);
   }
 

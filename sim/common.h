@@ -86,8 +86,7 @@ private:
 };
 
 template <typename... Args> void log(const char *fmt, Args &&...args) {
-  if (options::verbose)
-    fprintf(options::log, fmt, std::forward<Args>(args)...); // NOLINT
+  fprintf(options::log, fmt, std::forward<Args>(args)...); // NOLINT
 }
 
 #endif

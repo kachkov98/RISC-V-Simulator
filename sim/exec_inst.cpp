@@ -18,13 +18,13 @@
 #define OFFSET ((cur_inst - fst_inst) * 4)
 #define NEXT_INST()                                                                                \
   {                                                                                                \
-    if (options::verbose)                                                                          \
+    if (options::execution_log)                                                                    \
       cur_inst->dump(options::log);                                                                \
     return (cur_inst + 1)->exec(fst_inst, state);                                                  \
   }
 #define END_TRACE()                                                                                \
   {                                                                                                \
-    if (options::verbose)                                                                          \
+    if (options::execution_log)                                                                    \
       cur_inst->dump(options::log);                                                                \
   }
 
