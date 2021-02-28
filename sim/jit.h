@@ -29,10 +29,9 @@ public:
   asmjit::x86::Assembler &getAsm() const { return x86asm_; }
   asmjit::Operand getReg(ir::Reg reg) const;
   asmjit::Operand getPc() const;
-  asmjit::Operand getTmp() const { return asmjit::x86::eax; }
+  asmjit::x86::Gp getTmp1() const { return asmjit::x86::eax; }
+  asmjit::x86::Gp getTmp2() const { return asmjit::x86::edx; }
   asmjit::Operand getMem() const;
-  //asmjit::Operand getLoadFunc() const;
-  //asmjit::Operand getStoreFunc() const;
   asmjit::Label getFunctionStart() const { return func_start_; };
   size_t getOffset() const { return cur_inst_ * 4; }
 
